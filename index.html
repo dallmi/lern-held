@@ -47,7 +47,7 @@
   .screen.active { opacity: 1; pointer-events: auto; }
 
   /* ---------- Menü ---------- */
-  #menu { justify-content: flex-start; overflow-y: auto; padding-top: max(22px, env(safe-area-inset-top)); }
+  #menu { justify-content: center; overflow-y: auto; padding-top: max(22px, env(safe-area-inset-top)); }
   #menu h1 { font-size: 13cqw; line-height: 1.05; text-align: center; }
   #menu h1 .title {
     background: linear-gradient(90deg,#ff5252,#ff9800,#ffd600,#43d17a,#29b6f6,#b14aff);
@@ -87,6 +87,20 @@
   @keyframes wiggle { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
   .tile .t1 { font-size: 6.4cqw; font-weight: 800; text-shadow: 0 2px 0 rgba(0,0,0,.18); }
   .tile .t2 { font-size: 3.8cqw; opacity: .92; }
+
+  /* Seiten-Navigation (Pagination) */
+  .pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 4px 0 6px; }
+  .pager .arrow { font-family: inherit; border: none; cursor: pointer; color: #1c3b1a;
+                  background: rgba(255,255,255,.9); width: 50px; height: 50px; border-radius: 50%;
+                  font-size: 30px; font-weight: 800; line-height: 1; display: flex;
+                  align-items: center; justify-content: center; padding-bottom: 4px;
+                  box-shadow: 0 5px 0 rgba(0,0,0,.2), 0 8px 14px rgba(0,0,0,.2); }
+  .pager .arrow:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.2); }
+  .pager .arrow.off { visibility: hidden; }
+  .pager .dots { display: flex; gap: 9px; }
+  .pager .dot { width: 13px; height: 13px; border-radius: 50%; background: rgba(255,255,255,.5);
+                cursor: pointer; transition: transform .15s, background .15s; }
+  .pager .dot.on { background: #fff; transform: scale(1.25); }
 
   /* ---------- Spiel ---------- */
   #game { justify-content: flex-start; padding: 0; }
@@ -238,6 +252,11 @@
         <span class="ico">🃏</span>
         <span class="txt"><span class="t1">Memory</span><br><span class="t2">Finde die Tier-Paare!</span></span>
       </button>
+    </div>
+    <div class="pager">
+      <button class="arrow" id="pagerPrev" aria-label="Vorherige Seite">‹</button>
+      <div class="dots" id="pagerDots"></div>
+      <button class="arrow" id="pagerNext" aria-label="Nächste Seite">›</button>
     </div>
   </section>
 
@@ -791,9 +810,37 @@ const el = {
   againBtn: byId("againBtn"),
   menuBtn: byId("menuBtn"),
   winText: byId("winText"),
+  pagerDots: byId("pagerDots"),
+  pagerPrev: byId("pagerPrev"),
+  pagerNext: byId("pagerNext"),
 };
 el.mascot.innerHTML = lionMascot();
 updateSpeaker();
+
+/* ---------- Menü-Seiten (max. 4 Spiele pro Seite) ---------- */
+const PAGE_SIZE = 4;
+let menuPage = 0;
+function setupPager(){
+  const tiles = document.querySelectorAll(".tiles .tile");
+  const pages = Math.ceil(tiles.length / PAGE_SIZE);
+  el.pagerDots.innerHTML = "";
+  for (let i = 0; i < pages; i++){
+    const d = document.createElement("span");
+    d.className = "dot";
+    d.addEventListener("click", () => { menuPage = i; renderMenuPage(); });
+    el.pagerDots.appendChild(d);
+  }
+  renderMenuPage();
+}
+function renderMenuPage(){
+  const tiles = document.querySelectorAll(".tiles .tile");
+  const pages = Math.ceil(tiles.length / PAGE_SIZE);
+  menuPage = Math.max(0, Math.min(menuPage, pages - 1));
+  tiles.forEach((t, i) => { t.style.display = (Math.floor(i / PAGE_SIZE) === menuPage) ? "" : "none"; });
+  [...el.pagerDots.children].forEach((d, i) => d.classList.toggle("on", i === menuPage));
+  el.pagerPrev.classList.toggle("off", menuPage === 0);
+  el.pagerNext.classList.toggle("off", menuPage >= pages - 1);
+}
 
 function showScreen(name){
   Object.values(el.screens).forEach(s => s.classList.remove("active"));
@@ -1163,6 +1210,9 @@ function tick(){
 document.querySelectorAll(".tile").forEach(t => {
   t.addEventListener("click", () => { initAudio(); startGame(t.dataset.mode); });
 });
+el.pagerPrev.addEventListener("click", () => { menuPage--; renderMenuPage(); });
+el.pagerNext.addEventListener("click", () => { menuPage++; renderMenuPage(); });
+setupPager();
 el.speakBtn.addEventListener("click", () => {
   initAudio();
   muted = !muted;
