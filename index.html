@@ -478,7 +478,7 @@ function ellipseStroke(cx,cy,rx,ry,startDeg){
 
 /* ---------- Großbuchstaben als Striche (0..100); O wird als Ellipse erzeugt ---------- */
 const LETTER_PATHS = {
-  A: [[[26,86],[50,14],[74,86]], [[36,56],[64,56]]],
+  A: [[[26,86],[50,14]], [[50,14],[74,86]], [[36,56],[64,56]]],
   B: [[[32,16],[32,86]], [[32,16],[58,18],[66,30],[58,46],[32,48]], [[32,48],[60,52],[70,66],[60,82],[32,84]]],
   E: [[[70,16],[32,16],[32,86],[70,86]], [[32,50],[62,50]]],
   F: [[[34,16],[34,86]], [[34,16],[70,16]], [[34,50],[62,50]]],
@@ -1308,27 +1308,32 @@ function setupTrace(cv, glyph, onComplete){
   const ctx = cv.getContext("2d");
   const S = 3;
   const strokes = glyphStrokes(glyph);
-  const wps = [];
-  strokes.forEach(st => resample(st, 5).forEach(pt => wps.push({ x: pt[0]*S, y: pt[1]*S, hit: false })));
+  const strokeWps = strokes.map(st => resample(st, 5).map(pt => ({ x: pt[0]*S, y: pt[1]*S, hit: false })));
+  const filled = strokes.map(() => false);   // welcher Strich ist fertig nachgezogen?
   let localDone = false;
-  function drawStrokes(col, lw){
+  function drawStroke(st, col, lw){
     ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = col; ctx.lineWidth = lw;
-    strokes.forEach(st => { ctx.beginPath(); st.forEach((pt,i) => { const x=pt[0]*S, y=pt[1]*S; i ? ctx.lineTo(x,y) : ctx.moveTo(x,y); }); ctx.stroke(); });
+    ctx.beginPath(); st.forEach((pt,i) => { const x=pt[0]*S, y=pt[1]*S; i ? ctx.lineTo(x,y) : ctx.moveTo(x,y); }); ctx.stroke();
   }
-  ctx.clearRect(0,0,300,300);
-  drawStrokes("#dfe7f0", 24);
-  strokes.forEach(st => {                   // grüner Startpunkt je Strich
-    const x = st[0][0]*S, y = st[0][1]*S;
-    ctx.fillStyle = "#34a853"; ctx.beginPath(); ctx.arc(x,y,12,0,7); ctx.fill();
-    ctx.fillStyle = "#fff";    ctx.beginPath(); ctx.arc(x,y,4.5,0,7); ctx.fill();
-  });
+  function redraw(){
+    ctx.clearRect(0,0,300,300);
+    strokes.forEach((st,i) => drawStroke(st, filled[i] ? "#34a853" : "#dfe7f0", 24));
+    strokes.forEach((st,i) => { if (filled[i]) return;     // Startpunkt nur für noch offene Striche
+      const x = st[0][0]*S, y = st[0][1]*S;
+      ctx.fillStyle = "#34a853"; ctx.beginPath(); ctx.arc(x,y,12,0,7); ctx.fill();
+      ctx.fillStyle = "#fff";    ctx.beginPath(); ctx.arc(x,y,4.5,0,7); ctx.fill();
+    });
+  }
+  redraw();
   let drawing = false, last = null;
   function pos(e){ const r = cv.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*300, y:(e.clientY-r.top)/r.height*300 }; }
   function markHits(p){
-    let changed = false;
-    wps.forEach(w => { if (!w.hit && Math.hypot(w.x-p.x, w.y-p.y) < 28){ w.hit = true; changed = true;
-      ctx.fillStyle = "#34a853"; ctx.beginPath(); ctx.arc(w.x,w.y,5,0,7); ctx.fill(); } });
-    if (changed && wps.filter(w => w.hit).length / wps.length >= 0.72) finish();
+    let newly = false;
+    strokeWps.forEach((sw,i) => { if (filled[i]) return;
+      sw.forEach(w => { if (!w.hit && Math.hypot(w.x-p.x, w.y-p.y) < 22) w.hit = true; });
+      if (sw.filter(w => w.hit).length / sw.length >= 0.8){ filled[i] = true; newly = true; }   // dieser Strich vollständig
+    });
+    if (newly){ redraw(); if (filled.every(Boolean)) finish(); }
   }
   function down(e){ if (localDone) return; e.preventDefault(); drawing = true; try { cv.setPointerCapture(e.pointerId); } catch(x){} last = pos(e); markHits(last); }
   function move(e){ if (!drawing || localDone) return; e.preventDefault(); const p = pos(e);
@@ -1339,7 +1344,7 @@ function setupTrace(cv, glyph, onComplete){
   cv.addEventListener("pointermove", move);
   cv.addEventListener("pointerup", up);
   cv.addEventListener("pointercancel", up);
-  function finish(){ if (localDone) return; localDone = true; drawStrokes("#34a853", 24); onComplete(); }
+  function finish(){ if (localDone) return; localDone = true; redraw(); onComplete(); }
 }
 function newCanvas(){ const cv = document.createElement("canvas"); cv.className = "tracecanvas"; cv.width = 300; cv.height = 300; return cv; }
 
