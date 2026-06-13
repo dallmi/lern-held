@@ -200,6 +200,8 @@
   .card.right { animation: pop .45s ease; }
   .card.wrong { animation: shake .4s; }
   .card.dim { opacity: .35; pointer-events: none; }
+  .card.reading { transform: scale(1.04);
+                  box-shadow: 0 0 0 4px #ffd84d, 0 7px 0 rgba(0,0,0,.18), 0 11px 20px rgba(0,0,0,.28); }
 
   /* ---------- Gewinn ---------- */
   #win .trophy { font-size: 30cqw; animation: jump .7s ease infinite; }
@@ -882,9 +884,11 @@ let queue = [];      // verbleibende Aufgaben dieser Runde
 let score = 0;       // gesammelte Sterne
 let current = null;  // aktuelle Aufgabe
 let locked = false;  // sperrt Eingaben während der Jubel-Animation
+let readSeq = 0;     // Token für die Vorlese-Sequenz (Hauptstadt-Held)
 
 function startGame(m){
   initAudio();
+  cancelRead();
   mode = m; score = 0;
   if (m === "memory"){
     buildStars(MEMORY_PAIRS);
@@ -920,6 +924,7 @@ function lightStars(){
 }
 
 function nextQuestion(){
+  cancelRead();
   if (queue.length === 0){ winRound(); return; }
   current = queue.shift();
   locked = false;
@@ -938,7 +943,7 @@ function askAloud(){
   if (mode === "counting") speak("Wie viele " + current.plural + "?");
   if (mode === "flags")    speak("Finde " + current.name);
   if (mode === "english")  speakEN("Where is the " + current.en.toLowerCase() + "?");
-  if (mode === "capitals") speak("Finde die Hauptstadt von " + current.country);
+  if (mode === "capitals") readCapitals();
   if (mode === "rhyme")    speak("Was reimt sich auf " + current.word + "?");
   if (mode === "memory")   speak("Finde die Tier-Paare!");
 }
@@ -1084,6 +1089,37 @@ function renderCapitals(item){
   el.content.appendChild(wrap);
 }
 
+/* Vorlesen aller Optionen mit Hervorhebung (für Kinder, die noch nicht lesen).
+   Liest erst die Frage, dann jede Stadt; die gerade gesprochene Karte leuchtet. */
+function cancelRead(){
+  readSeq++;
+  document.querySelectorAll(".card.reading").forEach(c => c.classList.remove("reading"));
+}
+function readCapitals(){
+  const token = ++readSeq;
+  document.querySelectorAll(".card.reading").forEach(c => c.classList.remove("reading"));
+  if (muted || !("speechSynthesis" in window)) return;
+  const cards = [...el.content.querySelectorAll(".card")];
+  const parts = [{ text: "Finde die Hauptstadt von " + current.country }];
+  cards.forEach(c => parts.push({ text: c.querySelector(".label").textContent, card: c }));
+  const s = window.speechSynthesis;
+  let i = 0;
+  function step(){
+    document.querySelectorAll(".card.reading").forEach(c => c.classList.remove("reading"));
+    if (muted || token !== readSeq || i >= parts.length) return;
+    const p = parts[i++];
+    if (p.card) p.card.classList.add("reading");
+    const u = new SpeechSynthesisUtterance(p.text);
+    u.lang = "de-DE"; if (germanVoice) u.voice = germanVoice;
+    u.rate = 0.94; u.pitch = 1.1; u.volume = 1;
+    u.onend = () => { if (token === readSeq) setTimeout(step, 300); };
+    u.onerror = () => { if (token === readSeq) setTimeout(step, 300); };
+    s.speak(u);
+  }
+  s.cancel();
+  setTimeout(() => { if (token === readSeq) step(); }, 130);
+}
+
 /* ---------- Reim-Held ---------- */
 function renderRhyme(item){
   el.ask.innerHTML = `Was reimt sich auf <span class="askemoji">${item.emoji}</span> <b>${item.word}</b>?`;
@@ -1154,6 +1190,7 @@ function onMemoryPick(card){
 /* ---------- gemeinsame Antwort-Logik ---------- */
 function handleAnswer(isCorrect, btn, praiseFn){
   if (locked) return;
+  cancelRead();
   if (isCorrect){
     locked = true;
     score++; lightStars();
@@ -1241,9 +1278,9 @@ el.speakBtn.addEventListener("click", () => {
   if (muted) { if ("speechSynthesis" in window) speechSynthesis.cancel(); }
   else { askAloud(); }   // beim Einschalten gleich die aktuelle Aufgabe vorlesen
 });
-el.homeBtn.addEventListener("click", () => { speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
+el.homeBtn.addEventListener("click", () => { cancelRead(); speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
 el.againBtn.addEventListener("click", () => { initAudio(); startGame(mode); });
-el.menuBtn.addEventListener("click", () => { speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
+el.menuBtn.addEventListener("click", () => { cancelRead(); speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
 
 window.addEventListener("load", () => setTimeout(pickVoice, 200));
 </script>
