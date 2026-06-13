@@ -800,8 +800,10 @@ function fixPron(text){
 
 /* Robustes Sprechen: cancel + kurze Pause, sonst verschluckt iOS Safari die Ansage */
 let speakTimer = null;
-function doSpeak(text, lang, voice, rate, pitch){
-  if (muted || !("speechSynthesis" in window)) return;
+function doSpeak(text, lang, voice, rate, pitch, onDone){
+  let fired = false;
+  const finish = () => { if (fired) return; fired = true; if (onDone) onDone(); };
+  if (muted || !("speechSynthesis" in window)) { if (onDone) setTimeout(finish, 50); return; }
   const s = window.speechSynthesis;
   s.cancel();
   clearTimeout(speakTimer);
@@ -809,12 +811,13 @@ function doSpeak(text, lang, voice, rate, pitch){
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang; if (voice) u.voice = voice;
     u.rate = rate; u.pitch = pitch; u.volume = 1;
+    if (onDone){ u.onend = finish; u.onerror = finish; }
     try { s.resume(); } catch (e) {}
     s.speak(u);
   }, 120);
 }
-function speak(text){ doSpeak(fixPron(text), "de-DE", germanVoice, 0.94, 1.1); }
-function speakEN(text){ doSpeak(text, "en-US", englishVoice, 0.85, 1.05); }
+function speak(text, onDone){ doSpeak(fixPron(text), "de-DE", germanVoice, 0.94, 1.1, onDone); }
+function speakEN(text, onDone){ doSpeak(text, "en-US", englishVoice, 0.85, 1.05, onDone); }
 
 /* ===================================================================
    HILFSFUNKTIONEN
@@ -968,7 +971,7 @@ function renderLetters(item){
     b.addEventListener("click", () => {
       speak(letter);                                  // Buchstabe vorlesen (Erkunden)
       handleAnswer(letter === item.l, b,
-        () => speak("Richtig! " + item.w + " fängt mit " + item.l + " an!"));
+        (done) => speak("Richtig! " + item.w + " fängt mit " + item.l + " an!", done));
     });
     choices.appendChild(b);
   });
@@ -1015,7 +1018,7 @@ function renderCounting(animal){
     b.className = "choice big"; b.textContent = String(n);
     b.addEventListener("click", () => {
       handleAnswer(n === target, b,
-        () => speak("Richtig! " + target + " " + (target === 1 ? animal.s : animal.p) + "!"));
+        (done) => speak("Richtig! " + target + " " + (target === 1 ? animal.s : animal.p) + "!", done));
     });
     choices.appendChild(b);
   });
@@ -1044,7 +1047,7 @@ function renderFlags(item){
     card.innerHTML = flagSVG(c.id) + `<span class="label">${c.name}</span>`;
     card.addEventListener("click", () => {
       handleAnswer(c.id === item.id, card,
-        () => speak(pick(["Richtig!", "Super! Genau richtig!", "Jaaa! Richtig!", "Klasse gemacht!"])));
+        (done) => speak(pick(["Richtig!", "Super! Genau richtig!", "Jaaa! Richtig!", "Klasse gemacht!"]), done));
     });
     wrap.appendChild(card);
   });
@@ -1064,7 +1067,7 @@ function renderEnglish(item){
     b.className = "choice big emoji"; b.textContent = o.e;
     b.addEventListener("click", () => {
       handleAnswer(o.en === item.en, b,
-        () => speakEN(pick(["Yes! " + item.en + "!", "Great job!", "Well done! " + item.en + "!", "Correct! " + item.en + "!"])));
+        (done) => speakEN(pick(["Yes! " + item.en + "!", "Great job!", "Well done! " + item.en + "!", "Correct! " + item.en + "!"]), done));
     });
     choices.appendChild(b);
   });
@@ -1085,7 +1088,7 @@ function renderCapitals(item){
     card.innerHTML = landmarkSVG(o.id) + `<span class="label">${o.capital}</span>`;
     card.addEventListener("click", () => {
       handleAnswer(o.id === item.id, card,
-        () => speak("Richtig! Die Hauptstadt von " + item.country + " ist " + item.capital + "!"));
+        (done) => speak("Richtig! Die Hauptstadt von " + item.country + " ist " + item.capital + "!", done));
     });
     wrap.appendChild(card);
   });
@@ -1140,7 +1143,7 @@ function renderRhyme(item){
     card.addEventListener("click", () => {
       speak(o.w);
       handleAnswer(o.w === correct.w, card,
-        () => speak("Richtig! " + item.word + " reimt sich auf " + correct.w + "!"));
+        (done) => speak("Richtig! " + item.word + " reimt sich auf " + correct.w + "!", done));
     });
     wrap.appendChild(card);
   });
@@ -1201,8 +1204,10 @@ function handleAnswer(isCorrect, btn, praiseFn){
     [...btn.parentElement.children].forEach(c => { if (c !== btn) c.classList.add("dim"); });
     el.mascot.classList.remove("cheer"); void el.mascot.offsetWidth; el.mascot.classList.add("cheer");
     playCheer(); confettiBurst();
-    praiseFn();
-    setTimeout(nextQuestion, 1900);
+    let done = false;
+    const go = () => { if (done) return; done = true; setTimeout(nextQuestion, 600); };
+    praiseFn(go);            // weiter, sobald das Lob fertig gesprochen ist
+    setTimeout(go, 8000);    // Sicherheitsnetz, falls onend nie feuert
   } else {
     btn.classList.remove("wrong"); void btn.offsetWidth; btn.classList.add("wrong");
     playWrong();

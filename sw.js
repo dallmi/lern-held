@@ -2,7 +2,7 @@
    Strategie: cache-first. Beim ersten Laden werden alle Dateien gespeichert;
    danach läuft alles ohne Internet. CACHE-Version erhöhen, wenn das Spiel
    aktualisiert wird, damit Geräte die neue Fassung holen. */
-const CACHE = "lern-held-v12";
+const CACHE = "lern-held-v13";
 const ASSETS = [
   "./",
   "./index.html",
