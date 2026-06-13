@@ -65,7 +65,9 @@
     font-family: inherit; transition: transform .08s, box-shadow .08s; text-align: left;
   }
   .tile[data-mode="letters"]  { background: linear-gradient(135deg,#ff8a3c 0%,#ff4d6d 100%); }
+  .tile[data-mode="rhyme"]    { background: linear-gradient(135deg,#ff8a5c 0%,#ff5e7e 100%); }
   .tile[data-mode="counting"] { background: linear-gradient(135deg,#3aa0ff 0%,#8a5bff 100%); }
+  .tile[data-mode="memory"]   { background: linear-gradient(135deg,#6a7bff 0%,#5a32c8 100%); }
   .tile[data-mode="flags"]    { background: linear-gradient(135deg,#2fd36b 0%,#0fa89a 100%); }
   .tile[data-mode="capitals"] { background: linear-gradient(135deg,#19c2e6 0%,#2f72e8 100%); }
   .tile[data-mode="english"]  { background: linear-gradient(135deg,#ff6fae 0%,#9d4edd 100%); }
@@ -76,10 +78,12 @@
     background: rgba(255,255,255,.92); border-radius: 20px;
     box-shadow: inset 0 -3px 0 rgba(0,0,0,.08); animation: wiggle 3s ease-in-out infinite;
   }
+  .tile[data-mode="rhyme"] .ico    { animation-delay: .2s; }
   .tile[data-mode="counting"] .ico { animation-delay: .4s; }
   .tile[data-mode="flags"] .ico    { animation-delay: .8s; }
   .tile[data-mode="capitals"] .ico { animation-delay: 1.2s; }
   .tile[data-mode="english"] .ico  { animation-delay: 1.6s; }
+  .tile[data-mode="memory"] .ico   { animation-delay: 2s; }
   @keyframes wiggle { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
   .tile .t1 { font-size: 6.4cqw; font-weight: 800; text-shadow: 0 2px 0 rgba(0,0,0,.18); }
   .tile .t2 { font-size: 3.8cqw; opacity: .92; }
@@ -111,6 +115,24 @@
                    border-radius: 3px; overflow: hidden; border: 1.5px solid rgba(255,255,255,.7);
                    box-shadow: 0 1px 2px rgba(0,0,0,.25); }
   .ask .flagchip svg { display: block; width: 100%; height: auto; }
+  .ask .askemoji { font-size: 1.5em; vertical-align: middle; }
+  .card .cardemoji { font-size: 13cqw; line-height: 1.1; }
+
+  /* Memory-Raster */
+  .mgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+           width: 100%; max-width: 360px; margin: auto; padding: 6px; }
+  .mcard { aspect-ratio: 1; border-radius: 16px; cursor: pointer;
+           display: flex; align-items: center; justify-content: center;
+           background: linear-gradient(135deg,#5b8def,#7a5cff); color: #fff;
+           box-shadow: 0 5px 0 rgba(0,0,0,.18), 0 8px 14px rgba(0,0,0,.18);
+           transition: transform .1s; }
+  .mcard:active { transform: scale(.95); }
+  .mcard .back { font-size: 8cqw; }
+  .mcard .front { display: none; font-size: 12cqw; }
+  .mcard.open, .mcard.matched { background: #fff; }
+  .mcard.open .front, .mcard.matched .front { display: block; }
+  .mcard.open .back, .mcard.matched .back { display: none; }
+  .mcard.matched { animation: pop .45s ease; box-shadow: 0 0 0 3px #ffd84d, 0 5px 0 rgba(0,0,0,.18); }
   .speaker { font-size: 28px; background: rgba(255,255,255,.28); border: none; border-radius: 50%;
              width: 50px; height: 50px; flex: none; cursor: pointer; color: #fff;
              box-shadow: 0 4px 0 rgba(0,0,0,.18); }
@@ -192,6 +214,10 @@
         <span class="ico">🔤</span>
         <span class="txt"><span class="t1">Buchstaben-Detektiv</span><br><span class="t2">Womit fängt das Tier an?</span></span>
       </button>
+      <button class="tile" data-mode="rhyme">
+        <span class="ico">🎵</span>
+        <span class="txt"><span class="t1">Reim-Held</span><br><span class="t2">Was reimt sich?</span></span>
+      </button>
       <button class="tile" data-mode="counting">
         <span class="ico">🔢</span>
         <span class="txt"><span class="t1">Zähl-Held</span><br><span class="t2">Wie viele Tiere sind das?</span></span>
@@ -207,6 +233,10 @@
       <button class="tile" data-mode="english">
         <span class="ico">🇬🇧</span>
         <span class="txt"><span class="t1">Englisch-Held</span><br><span class="t2">Hör das Wort – finde das Bild!</span></span>
+      </button>
+      <button class="tile" data-mode="memory">
+        <span class="ico">🃏</span>
+        <span class="txt"><span class="t1">Memory</span><br><span class="t2">Finde die Tier-Paare!</span></span>
       </button>
     </div>
   </section>
@@ -367,6 +397,21 @@ const CAPITALS = [
   { id: "be", country: "Belgien",     capital: "Brüssel" },
   { id: "ch", country: "Schweiz",     capital: "Bern" },
 ];
+
+/* ---------- Reim-Paare für den Reim-Held (Wort -> Reimwort, beide als Emoji) ---------- */
+const RHYMES = [
+  { word: "Haus",    emoji: "🏠", rhymeWord: "Maus",  rhymeEmoji: "🐭" },
+  { word: "Hund",    emoji: "🐶", rhymeWord: "Mund",  rhymeEmoji: "👄" },
+  { word: "Hose",    emoji: "👖", rhymeWord: "Rose",  rhymeEmoji: "🌹" },
+  { word: "Kuh",     emoji: "🐮", rhymeWord: "Schuh", rhymeEmoji: "👟" },
+  { word: "Eis",     emoji: "🍦", rhymeWord: "Reis",  rhymeEmoji: "🍚" },
+  { word: "Schwein", emoji: "🐷", rhymeWord: "Stein", rhymeEmoji: "🪨" },
+  { word: "Hahn",    emoji: "🐓", rhymeWord: "Zahn",  rhymeEmoji: "🦷" },
+];
+
+/* ---------- Memory: Tier-Emojis (es werden Paare gebildet) ---------- */
+const MEMORY_POOL = ["🦁","🐯","🐘","🦒","🦓","🐊","🐵","🦛","🐧","🐻","🦊","🐸"];
+const MEMORY_PAIRS = 4;   // 4 Paare = 8 Karten
 
 /* ===================================================================
    MASKOTTCHEN — fröhlicher Löwe (SVG, immer scharf)
@@ -774,7 +819,16 @@ let locked = false;  // sperrt Eingaben während der Jubel-Animation
 function startGame(m){
   initAudio();
   mode = m; score = 0;
+  if (m === "memory"){
+    buildStars(MEMORY_PAIRS);
+    showScreen("game");
+    el.content.innerHTML = "";
+    renderMemory();
+    setTimeout(askAloud, 350);
+    return;
+  }
   if (m === "letters")  queue = shuffle(ANIMAL_WORDS).slice(0, ROUND_LENGTH);
+  if (m === "rhyme")    queue = shuffle(RHYMES).slice(0, ROUND_LENGTH);
   if (m === "counting") queue = shuffle(ANIMAL_COUNT).slice(0, ROUND_LENGTH);
   if (m === "flags")    queue = shuffle(COUNTRIES).slice(0, ROUND_LENGTH);
   if (m === "english")  queue = shuffle(ENGLISH).slice(0, ROUND_LENGTH);
@@ -784,9 +838,10 @@ function startGame(m){
   nextQuestion();
 }
 
-function buildStars(){
+function buildStars(n){
+  const total = n || ROUND_LENGTH;
   el.stars.innerHTML = "";
-  for (let i = 0; i < ROUND_LENGTH; i++){
+  for (let i = 0; i < total; i++){
     const s = document.createElement("span");
     s.className = "star"; s.textContent = "★";
     el.stars.appendChild(s);
@@ -807,6 +862,7 @@ function nextQuestion(){
   if (mode === "flags")    renderFlags(current);
   if (mode === "english")  renderEnglish(current);
   if (mode === "capitals") renderCapitals(current);
+  if (mode === "rhyme")    renderRhyme(current);
   setTimeout(askAloud, 350);
 }
 
@@ -816,6 +872,8 @@ function askAloud(){
   if (mode === "flags")    speak("Finde " + current.name);
   if (mode === "english")  speakEN("Where is the " + current.en.toLowerCase() + "?");
   if (mode === "capitals") speak("Finde die Hauptstadt von " + current.country);
+  if (mode === "rhyme")    speak("Was reimt sich auf " + current.word + "?");
+  if (mode === "memory")   speak("Finde die Tier-Paare!");
 }
 
 /* ---------- Buchstaben-Detektiv ---------- */
@@ -959,6 +1017,73 @@ function renderCapitals(item){
   el.content.appendChild(wrap);
 }
 
+/* ---------- Reim-Held ---------- */
+function renderRhyme(item){
+  el.ask.innerHTML = `Was reimt sich auf <span class="askemoji">${item.emoji}</span> <b>${item.word}</b>?`;
+  const correct = { e: item.rhymeEmoji, w: item.rhymeWord };
+  const others = shuffle(RHYMES.filter(x => x.word !== item.word)).slice(0, 2)
+                   .map(x => ({ e: x.rhymeEmoji, w: x.rhymeWord }));
+  const options = shuffle([correct, ...others]);
+
+  const wrap = document.createElement("div");
+  wrap.className = "cards";
+  options.forEach(o => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<span class="cardemoji">${o.e}</span><span class="label">${o.w}</span>`;
+    card.addEventListener("click", () => {
+      speak(o.w);
+      handleAnswer(o.w === correct.w, card,
+        () => speak("Richtig! " + item.word + " reimt sich auf " + correct.w + "!"));
+    });
+    wrap.appendChild(card);
+  });
+  el.content.appendChild(wrap);
+}
+
+/* ---------- Memory (Paare finden) ---------- */
+let mFirst = null, mLock = false;
+function renderMemory(){
+  el.ask.textContent = "Finde die Tier-Paare!";
+  mFirst = null; mLock = false;
+  const chosen = shuffle(MEMORY_POOL).slice(0, MEMORY_PAIRS);
+  const deck = shuffle([...chosen, ...chosen]);
+
+  const grid = document.createElement("div");
+  grid.className = "mgrid";
+  deck.forEach(emo => {
+    const card = document.createElement("div");
+    card.className = "mcard";
+    card.dataset.k = emo;
+    card.innerHTML = `<span class="back">🐾</span><span class="front">${emo}</span>`;
+    card.addEventListener("click", () => onMemoryPick(card));
+    grid.appendChild(card);
+  });
+  el.content.appendChild(grid);
+}
+function onMemoryPick(card){
+  if (mLock || card.classList.contains("open") || card.classList.contains("matched")) return;
+  initAudio();
+  card.classList.add("open");
+  playBlip();
+  if (!mFirst){ mFirst = card; return; }
+
+  const a = mFirst; mFirst = null;
+  if (a.dataset.k === card.dataset.k){          // Paar gefunden
+    mLock = true;
+    setTimeout(() => {
+      a.classList.add("matched"); card.classList.add("matched");
+      score++; lightStars(); playCheer(); confettiBurst();
+      mLock = false;
+      if (score >= MEMORY_PAIRS) setTimeout(winRound, 900);
+    }, 260);
+  } else {                                       // kein Paar -> wieder zudecken
+    mLock = true;
+    playWrong();
+    setTimeout(() => { a.classList.remove("open"); card.classList.remove("open"); mLock = false; }, 950);
+  }
+}
+
 /* ---------- gemeinsame Antwort-Logik ---------- */
 function handleAnswer(isCorrect, btn, praiseFn){
   if (locked) return;
@@ -985,6 +1110,8 @@ function winRound(){
               : mode === "flags" ? "Flaggen-Held"
               : mode === "capitals" ? "Hauptstadt-Held"
               : mode === "english" ? "Englisch-Held"
+              : mode === "rhyme" ? "Reim-Held"
+              : mode === "memory" ? "Memory-Held"
               : "Lern-Held";
   el.winText.innerHTML = `Super gemacht!<br>Du bist ein<br>${title}! 🌟`;
   showScreen("win");
