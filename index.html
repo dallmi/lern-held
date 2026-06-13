@@ -186,6 +186,7 @@
   .choice.wrong { animation: shake .4s; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-12px)} 40%{transform:translateX(12px)} 60%{transform:translateX(-8px)} 80%{transform:translateX(8px)} }
   .choice.dim { opacity: .4; pointer-events: none; }
+  .choice.reading { transform: scale(1.08); box-shadow: 0 0 0 4px #ffd84d, 0 7px 0 rgba(0,0,0,.18), 0 11px 20px rgba(0,0,0,.28); }
 
   /* Flaggen-Karten */
   .cards { display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 2px 4px 6px; flex: 1; justify-content: center; }
@@ -945,7 +946,7 @@ function nextQuestion(){
 }
 
 function askAloud(){
-  if (mode === "letters")  speak("Womit fängt " + current.w + " an?");
+  if (mode === "letters")  readLetters();
   if (mode === "counting") speak("Wie viele " + current.plural + "?");
   if (mode === "flags")    speak("Finde " + current.name);
   if (mode === "english")  speakEN("Where is the " + current.en.toLowerCase() + "?");
@@ -1097,24 +1098,23 @@ function renderCapitals(item){
 
 /* Vorlesen aller Optionen mit Hervorhebung (für Kinder, die noch nicht lesen).
    Liest erst die Frage, dann jede Stadt; die gerade gesprochene Karte leuchtet. */
-function cancelRead(){
-  readSeq++;
-  document.querySelectorAll(".card.reading").forEach(c => c.classList.remove("reading"));
-}
-function readCapitals(){
+function clearReading(){ document.querySelectorAll(".reading").forEach(c => c.classList.remove("reading")); }
+function cancelRead(){ readSeq++; clearReading(); }
+
+/* Liest eine Frage + alle Optionen vor und hebt die gerade gesprochene hervor.
+   items = [{ el, text }]. Für Kinder, die noch nicht lesen können. */
+function readOptions(promptText, items){
   const token = ++readSeq;
-  document.querySelectorAll(".card.reading").forEach(c => c.classList.remove("reading"));
+  clearReading();
   if (muted || !("speechSynthesis" in window)) return;
-  const cards = [...el.content.querySelectorAll(".card")];
-  const parts = [{ text: "Finde die Hauptstadt von " + current.country }];
-  cards.forEach(c => parts.push({ text: c.querySelector(".label").textContent, card: c }));
+  const parts = [{ text: promptText }].concat(items.map(it => ({ text: it.text, el: it.el })));
   const s = window.speechSynthesis;
   let i = 0;
   function step(){
-    document.querySelectorAll(".card.reading").forEach(c => c.classList.remove("reading"));
+    clearReading();
     if (muted || token !== readSeq || i >= parts.length) return;
     const p = parts[i++];
-    if (p.card) p.card.classList.add("reading");
+    if (p.el) p.el.classList.add("reading");
     const u = new SpeechSynthesisUtterance(p.text);
     u.lang = "de-DE"; if (germanVoice) u.voice = germanVoice;
     u.rate = 0.94; u.pitch = 1.1; u.volume = 1;
@@ -1124,6 +1124,16 @@ function readCapitals(){
   }
   s.cancel();
   setTimeout(() => { if (token === readSeq) step(); }, 130);
+}
+function readCapitals(){
+  const cards = [...el.content.querySelectorAll(".card")];
+  readOptions("Finde die Hauptstadt von " + current.country,
+              cards.map(c => ({ el: c, text: c.querySelector(".label").textContent })));
+}
+function readLetters(){
+  const btns = [...el.content.querySelectorAll(".choice")];
+  readOptions("Womit fängt " + current.w + " an?",
+              btns.map(b => ({ el: b, text: b.textContent })));
 }
 
 /* ---------- Reim-Held ---------- */
