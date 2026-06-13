@@ -83,7 +83,9 @@
 
   /* ---------- Spiel ---------- */
   #game { justify-content: flex-start; padding: 0; }
-  .topbar { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px 2px; }
+  .topbar { display: flex; align-items: center; gap: 8px; width: 100%;
+            padding: 10px 12px 2px; padding-top: max(12px, env(safe-area-inset-top));
+            position: relative; z-index: 3; }
   .home { font-size: 24px; background: rgba(255,255,255,.28); border: none; border-radius: 50%;
           width: 46px; height: 46px; flex: none; cursor: pointer; color: #fff;
           box-shadow: 0 4px 0 rgba(0,0,0,.18); }
@@ -108,7 +110,8 @@
   .speaker:active { transform: translateY(3px); }
 
   .content { flex: 1; width: 100%; display: flex; flex-direction: column;
-             align-items: center; justify-content: center; padding: 4px 10px 12px; overflow: hidden; }
+             align-items: center; justify-content: center; overflow: hidden;
+             padding: 4px 10px 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
 
   /* Buchstaben-Bühne */
   .stage { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 10px; }
