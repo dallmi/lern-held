@@ -67,6 +67,7 @@
   .tile[data-mode="letters"]  { background: linear-gradient(135deg,#ff8a3c 0%,#ff4d6d 100%); }
   .tile[data-mode="rhyme"]    { background: linear-gradient(135deg,#ff8a5c 0%,#ff5e7e 100%); }
   .tile[data-mode="counting"] { background: linear-gradient(135deg,#3aa0ff 0%,#8a5bff 100%); }
+  .tile[data-mode="trace"]    { background: linear-gradient(135deg,#ffb74d 0%,#fb8c00 100%); }
   .tile[data-mode="memory"]   { background: linear-gradient(135deg,#6a7bff 0%,#5a32c8 100%); }
   .tile[data-mode="flags"]    { background: linear-gradient(135deg,#2fd36b 0%,#0fa89a 100%); }
   .tile[data-mode="capitals"] { background: linear-gradient(135deg,#19c2e6 0%,#2f72e8 100%); }
@@ -80,6 +81,7 @@
   }
   .tile[data-mode="rhyme"] .ico    { animation-delay: .2s; }
   .tile[data-mode="counting"] .ico { animation-delay: .4s; }
+  .tile[data-mode="trace"] .ico    { animation-delay: .6s; }
   .tile[data-mode="flags"] .ico    { animation-delay: .8s; }
   .tile[data-mode="capitals"] .ico { animation-delay: 1.2s; }
   .tile[data-mode="english"] .ico  { animation-delay: 1.6s; }
@@ -147,6 +149,12 @@
   .mcard.open .front, .mcard.matched .front { display: block; }
   .mcard.open .back, .mcard.matched .back { display: none; }
   .mcard.matched { animation: pop .45s ease; box-shadow: 0 0 0 3px #ffd84d, 0 5px 0 rgba(0,0,0,.18); }
+
+  /* Zahlen malen */
+  .tracewrap { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; }
+  .tracecanvas { touch-action: none; background: #fff; border-radius: 22px;
+                 width: 84cqw; max-width: 340px; aspect-ratio: 1;
+                 box-shadow: 0 7px 0 rgba(0,0,0,.18), 0 10px 18px rgba(0,0,0,.18); }
   .speaker { font-size: 28px; background: rgba(255,255,255,.28); border: none; border-radius: 50%;
              width: 50px; height: 50px; flex: none; cursor: pointer; color: #fff;
              box-shadow: 0 4px 0 rgba(0,0,0,.18); }
@@ -238,6 +246,10 @@
       <button class="tile" data-mode="counting">
         <span class="ico">🔢</span>
         <span class="txt"><span class="t1">Zähl-Held</span><br><span class="t2">Wie viele Tiere sind das?</span></span>
+      </button>
+      <button class="tile" data-mode="trace">
+        <span class="ico">✏️</span>
+        <span class="txt"><span class="t1">Zahlen malen</span><br><span class="t2">Male die Zahl mit dem Finger nach!</span></span>
       </button>
       <button class="tile" data-mode="flags">
         <span class="ico">🏳️</span>
@@ -434,6 +446,34 @@ const RHYMES = [
 /* ---------- Memory: Tier-Emojis (es werden Paare gebildet) ---------- */
 const MEMORY_POOL = ["🦁","🐯","🐘","🦒","🦓","🐊","🐵","🦛","🐧","🐻","🦊","🐸"];
 const MEMORY_PAIRS = 6;   // 6 Paare = 12 Karten (4 Spalten × 3 Reihen)
+
+/* ---------- Zahlen 0–9 zum Nachmalen: Striche in Koordinaten 0..100 (0 wird als Ellipse erzeugt) ---------- */
+const DIGIT_PATHS = {
+  1: [[[38,30],[52,16],[52,84]], [[34,84],[68,84]]],
+  2: [[[28,34],[36,20],[52,16],[66,24],[66,40],[52,56],[30,84],[72,84]]],
+  3: [[[30,26],[50,16],[70,30],[52,48],[70,66],[50,84],[30,74]]],
+  4: [[[60,14],[26,66],[80,66]], [[60,14],[60,86]]],
+  5: [[[70,16],[36,16],[33,46],[52,40],[70,58],[56,84],[30,80]]],
+  6: [[[66,18],[44,24],[30,52],[32,76],[50,86],[68,76],[68,56],[50,48],[34,56]]],
+  7: [[[28,18],[74,18],[46,86]]],
+  8: [[[50,16],[34,24],[34,40],[50,50],[66,60],[66,78],[50,86],[34,78],[34,60],[50,50],[66,40],[66,24],[50,16]]],
+  9: [[[66,46],[50,52],[34,42],[36,24],[52,16],[66,26],[66,52],[58,76],[44,88]]],
+};
+function ellipseStroke(cx,cy,rx,ry,startDeg){
+  const p = [], steps = 28;
+  for (let i = 0; i <= steps; i++){ const a = (startDeg + i/steps*360)*Math.PI/180; p.push([cx+Math.cos(a)*rx, cy+Math.sin(a)*ry]); }
+  return p;
+}
+function digitStrokes(n){ return (n === 0) ? [ellipseStroke(50,50,23,35,-90)] : DIGIT_PATHS[n]; }
+function resample(stroke, spacing){
+  const out = [stroke[0].slice()]; let prev = stroke[0];
+  for (let i = 1; i < stroke.length; i++){
+    const b = stroke[i], dx = b[0]-prev[0], dy = b[1]-prev[1], d = Math.hypot(dx,dy), seg = Math.max(1, Math.round(d/spacing));
+    for (let k = 1; k <= seg; k++) out.push([prev[0]+dx*k/seg, prev[1]+dy*k/seg]);
+    prev = b;
+  }
+  return out;
+}
 
 /* ===================================================================
    MASKOTTCHEN — fröhlicher Löwe (SVG, immer scharf)
@@ -907,6 +947,7 @@ function startGame(m){
   }
   if (m === "letters")  queue = shuffle(ANIMAL_WORDS).slice(0, ROUND_LENGTH);
   if (m === "rhyme")    queue = shuffle(RHYMES).slice(0, ROUND_LENGTH);
+  if (m === "trace")    queue = shuffle([0,1,2,3,4,5,6,7,8,9]).slice(0, ROUND_LENGTH);
   if (m === "counting") queue = shuffle(ANIMAL_COUNT).slice(0, ROUND_LENGTH);
   if (m === "flags")    queue = shuffle(COUNTRIES).slice(0, ROUND_LENGTH);
   if (m === "english")  queue = shuffle(ENGLISH).slice(0, ROUND_LENGTH);
@@ -942,6 +983,7 @@ function nextQuestion(){
   if (mode === "english")  renderEnglish(current);
   if (mode === "capitals") renderCapitals(current);
   if (mode === "rhyme")    renderRhyme(current);
+  if (mode === "trace")    renderTrace(current);
   setTimeout(askAloud, 350);
 }
 
@@ -953,6 +995,7 @@ function askAloud(){
   if (mode === "capitals") readCapitals();
   if (mode === "rhyme")    speak("Was reimt sich auf " + current.word + "?");
   if (mode === "memory")   speak("Finde die Tier-Paare!");
+  if (mode === "trace")    speak("Male die " + current + " nach!");
 }
 
 /* ---------- Buchstaben-Detektiv ---------- */
@@ -1203,6 +1246,71 @@ function onMemoryPick(card){
   }
 }
 
+/* ---------- Zahlen malen (mit dem Finger nachfahren) ---------- */
+let traceDone = false;
+function renderTrace(n){
+  el.ask.innerHTML = `Male die <b>${n}</b> nach!`;
+  traceDone = false;
+  const wrap = document.createElement("div");
+  wrap.className = "tracewrap";
+  const cv = document.createElement("canvas");
+  cv.className = "tracecanvas"; cv.width = 300; cv.height = 300;
+  wrap.appendChild(cv);
+  el.content.appendChild(wrap);
+  setupTrace(cv, n);
+}
+function setupTrace(cv, n){
+  const ctx = cv.getContext("2d");
+  const S = 3;                       // 0..100  ->  0..300
+  const strokes = digitStrokes(n);
+  const wps = [];
+  strokes.forEach(st => resample(st, 5).forEach(pt => wps.push({ x: pt[0]*S, y: pt[1]*S, hit: false })));
+
+  function drawGuide(){
+    ctx.clearRect(0,0,300,300);
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.strokeStyle = "#dfe7f0"; ctx.lineWidth = 24;
+    strokes.forEach(st => { ctx.beginPath(); st.forEach((pt,i) => { const x=pt[0]*S, y=pt[1]*S; i ? ctx.lineTo(x,y) : ctx.moveTo(x,y); }); ctx.stroke(); });
+    strokes.forEach(st => {                 // grüner Startpunkt je Strich
+      const x = st[0][0]*S, y = st[0][1]*S;
+      ctx.fillStyle = "#34a853"; ctx.beginPath(); ctx.arc(x,y,12,0,7); ctx.fill();
+      ctx.fillStyle = "#fff";    ctx.beginPath(); ctx.arc(x,y,4.5,0,7); ctx.fill();
+    });
+  }
+  drawGuide();
+
+  let drawing = false, last = null;
+  function pos(e){ const r = cv.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*300, y:(e.clientY-r.top)/r.height*300 }; }
+  function markHits(p){
+    let changed = false;
+    wps.forEach(w => { if (!w.hit && Math.hypot(w.x-p.x, w.y-p.y) < 28){ w.hit = true; changed = true;
+      ctx.fillStyle = "#34a853"; ctx.beginPath(); ctx.arc(w.x,w.y,5,0,7); ctx.fill(); } });
+    if (changed && wps.filter(w => w.hit).length / wps.length >= 0.72) finishTrace();
+  }
+  function down(e){ if (traceDone) return; e.preventDefault(); drawing = true; try { cv.setPointerCapture(e.pointerId); } catch(x){} last = pos(e); markHits(last); }
+  function move(e){ if (!drawing || traceDone) return; e.preventDefault(); const p = pos(e);
+    ctx.strokeStyle = "#ff8a3c"; ctx.lineWidth = 16; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last = p; markHits(p); }
+  function up(){ drawing = false; }
+  cv.addEventListener("pointerdown", down);
+  cv.addEventListener("pointermove", move);
+  cv.addEventListener("pointerup", up);
+  cv.addEventListener("pointercancel", up);
+
+  function finishTrace(){
+    if (traceDone) return; traceDone = true;
+    ctx.strokeStyle = "#34a853"; ctx.lineWidth = 24; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    strokes.forEach(st => { ctx.beginPath(); st.forEach((pt,i) => { const x=pt[0]*S, y=pt[1]*S; i ? ctx.lineTo(x,y) : ctx.moveTo(x,y); }); ctx.stroke(); });
+    score++; lightStars();
+    el.mascot.classList.remove("cheer"); void el.mascot.offsetWidth; el.mascot.classList.add("cheer");
+    playCheer(); confettiBurst();
+    let done = false;
+    const go = () => { if (done) return; done = true; setTimeout(nextQuestion, 700); };
+    speak("Super! Das ist die " + n + "!", go);
+    setTimeout(go, 8000);
+  }
+}
+
 /* ---------- gemeinsame Antwort-Logik ---------- */
 function handleAnswer(isCorrect, btn, praiseFn){
   if (locked) return;
@@ -1234,6 +1342,7 @@ function winRound(){
               : mode === "english" ? "Englisch-Held"
               : mode === "rhyme" ? "Reim-Held"
               : mode === "memory" ? "Memory-Held"
+              : mode === "trace" ? "Mal-Held"
               : "Lern-Held";
   el.winText.innerHTML = `Super gemacht!<br>Du bist ein<br>${title}! 🌟`;
   showScreen("win");
