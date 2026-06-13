@@ -970,9 +970,9 @@ function renderLetters(item){
     const b = document.createElement("button");
     b.className = "choice big"; b.textContent = letter;
     b.addEventListener("click", () => {
-      speak(letter);                                  // Buchstabe vorlesen (Erkunden)
+      speak(letter.toLowerCase());                    // Buchstabe vorlesen (klein -> ohne "Großbuchstabe")
       handleAnswer(letter === item.l, b,
-        (done) => speak("Richtig! " + item.w + " fängt mit " + item.l + " an!", done));
+        (done) => speak("Richtig! " + item.w + " fängt mit " + item.l.toLowerCase() + " an!", done));
     });
     choices.appendChild(b);
   });
@@ -1133,7 +1133,7 @@ function readCapitals(){
 function readLetters(){
   const btns = [...el.content.querySelectorAll(".choice")];
   readOptions("Womit fängt " + current.w + " an?",
-              btns.map(b => ({ el: b, text: b.textContent })));
+              btns.map(b => ({ el: b, text: b.textContent.toLowerCase() })));  // klein -> "Te" statt "Großbuchstabe Te"
 }
 
 /* ---------- Reim-Held ---------- */
