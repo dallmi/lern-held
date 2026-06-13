@@ -481,14 +481,19 @@ const LETTER_PATHS = {
   A: [[[26,86],[50,14],[74,86]], [[36,56],[64,56]]],
   B: [[[32,16],[32,86]], [[32,16],[58,18],[66,30],[58,46],[32,48]], [[32,48],[60,52],[70,66],[60,82],[32,84]]],
   E: [[[70,16],[32,16],[32,86],[70,86]], [[32,50],[62,50]]],
+  F: [[[34,16],[34,86]], [[34,16],[70,16]], [[34,50],[62,50]]],
+  K: [[[32,16],[32,86]], [[68,16],[34,52],[68,86]]],
   L: [[[34,16],[34,86],[70,86]]],
   M: [[[26,86],[26,16],[50,54],[74,16],[74,86]]],
   P: [[[32,86],[32,16],[62,16],[70,30],[62,46],[32,48]]],
+  R: [[[32,86],[32,16],[62,16],[70,30],[62,46],[32,48]], [[44,48],[70,86]]],
+  S: [[[68,26],[52,16],[36,22],[34,38],[50,50],[66,60],[64,78],[48,86],[32,78]]],
   T: [[[24,16],[76,16]], [[50,16],[50,86]]],
   U: [[[28,16],[28,62],[38,80],[62,80],[72,62],[72,16]]],
+  "Ü": [[[28,16],[28,62],[38,80],[62,80],[72,62],[72,16]], [[40,6],[40,12]], [[60,6],[60,12]]],
 };
 /* Sinnvolle, kurze Wörter (Name + Familie + Alltag). Nur Buchstaben aus LETTER_PATHS/O. */
-const TRACE_WORDS = ["MATTEO", "MAMA", "PAPA", "OMA", "OPA", "AUTO", "BALL"];
+const TRACE_WORDS = ["MATTEO", "MAMA", "PAPA", "OMA", "OPA", "AUTO", "BALL", "KEKSE", "KAFFEE", "TÜR"];
 function digitStrokes(n){ return (n === 0) ? [ellipseStroke(50,50,23,35,-90)] : DIGIT_PATHS[n]; }
 function resample(stroke, spacing){
   const out = [stroke[0].slice()]; let prev = stroke[0];
@@ -884,6 +889,14 @@ function doSpeak(text, lang, voice, rate, pitch, onDone){
 }
 function speak(text, onDone){ doSpeak(fixPron(text), "de-DE", germanVoice, 0.94, 1.1, onDone); }
 function speakEN(text, onDone){ doSpeak(text, "en-US", englishVoice, 0.85, 1.05, onDone); }
+/* iOS: die erste Sprachausgabe muss direkt aus einer Berührung kommen, sonst bleibt sie stumm.
+   Beim ersten Tippen einmal eine leise leere Ansage abspielen -> entsperrt alle weiteren. */
+let speechPrimed = false;
+function primeSpeech(){
+  if (speechPrimed || !("speechSynthesis" in window)) return;
+  speechPrimed = true;
+  try { const u = new SpeechSynthesisUtterance(" "); u.volume = 0; window.speechSynthesis.speak(u); } catch (e) {}
+}
 
 /* ===================================================================
    HILFSFUNKTIONEN
@@ -1450,7 +1463,7 @@ function tick(){
    EVENTS
    =================================================================== */
 document.querySelectorAll(".tile").forEach(t => {
-  t.addEventListener("click", () => { initAudio(); startGame(t.dataset.mode); });
+  t.addEventListener("click", () => { initAudio(); primeSpeech(); startGame(t.dataset.mode); });
 });
 el.pagerPrev.addEventListener("click", () => { menuPage--; renderMenuPage(); });
 el.pagerNext.addEventListener("click", () => { menuPage++; renderMenuPage(); });
@@ -1464,7 +1477,7 @@ el.speakBtn.addEventListener("click", () => {
   else { askAloud(); }   // beim Einschalten gleich die aktuelle Aufgabe vorlesen
 });
 el.homeBtn.addEventListener("click", () => { cancelRead(); speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
-el.againBtn.addEventListener("click", () => { initAudio(); startGame(mode); });
+el.againBtn.addEventListener("click", () => { initAudio(); primeSpeech(); startGame(mode); });
 el.menuBtn.addEventListener("click", () => { cancelRead(); speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
 
 window.addEventListener("load", () => setTimeout(pickVoice, 200));
