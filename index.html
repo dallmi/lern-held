@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lern-Held">
+<meta name="theme-color" content="#6cc24a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>🦁 Lern-Held 🎉</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Comic Sans MS", "Chalkboard SE", "Baloo", system-ui, sans-serif;
+    background: #12222c;
+    color: #fff;
+    overflow: hidden;
+    touch-action: manipulation;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #app {
+    position: relative;
+    width: 100%; height: 100%;
+    max-width: 460px; max-height: 920px;
+    margin: 0 auto;
+    display: flex; flex-direction: column;
+    padding: 14px;
+    padding-top: max(14px, env(safe-area-inset-top));
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+    /* Savannen-Look: Himmel oben, Wiese unten */
+    background: linear-gradient(180deg, #7ec8ff 0%, #aee3ff 38%, #6cc24a 38%, #3a9b32 100%);
+    overflow: hidden;
+    container-type: size;
+  }
+  @media (min-width: 481px), (min-height: 921px) {
+    #app { border-radius: 28px; box-shadow: 0 18px 55px rgba(0,0,0,.55); }
+  }
+
+  /* ---------- Screens ---------- */
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 24px;
+            opacity: 0; pointer-events: none; transition: opacity .35s ease; }
+  .screen.active { opacity: 1; pointer-events: auto; }
+
+  /* ---------- Menü ---------- */
+  #menu h1 { font-size: 13cqw; line-height: 1.05; text-align: center; }
+  #menu h1 .title {
+    background: linear-gradient(90deg,#ff5252,#ff9800,#ffd600,#43d17a,#29b6f6,#b14aff);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 3px 0 rgba(0,0,0,.18));
+  }
+  #menu .sub { font-size: 4.8cqw; margin: 8px 0 4px; opacity: .95; text-align: center;
+               text-shadow: 0 2px 0 rgba(0,0,0,.18); }
+  .tiles { display: flex; flex-direction: column; gap: 16px; width: 100%; margin-top: 26px; }
+  .tile {
+    color: #fff; border: none; border-radius: 24px;
+    padding: 4.4cqw 5cqw; cursor: pointer; display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 8px 0 rgba(0,0,0,.22), 0 12px 22px rgba(0,0,0,.28);
+    font-family: inherit; transition: transform .08s, box-shadow .08s; text-align: left;
+  }
+  .tile[data-mode="letters"]  { background: linear-gradient(135deg,#ff8a3c 0%,#ff4d6d 100%); }
+  .tile[data-mode="counting"] { background: linear-gradient(135deg,#3aa0ff 0%,#8a5bff 100%); }
+  .tile[data-mode="flags"]    { background: linear-gradient(135deg,#2fd36b 0%,#0fa89a 100%); }
+  .tile[data-mode="english"]  { background: linear-gradient(135deg,#ff6fae 0%,#9d4edd 100%); }
+  .tile:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0,0,0,.22); }
+  .tile .ico {
+    font-size: 10cqw; flex: none; width: 17cqw; height: 17cqw; max-width: 84px; max-height: 84px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.92); border-radius: 20px;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,.08); animation: wiggle 3s ease-in-out infinite;
+  }
+  .tile[data-mode="counting"] .ico { animation-delay: .4s; }
+  .tile[data-mode="flags"] .ico    { animation-delay: .8s; }
+  .tile[data-mode="english"] .ico  { animation-delay: 1.2s; }
+  @keyframes wiggle { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
+  .tile .t1 { font-size: 6.4cqw; font-weight: 800; text-shadow: 0 2px 0 rgba(0,0,0,.18); }
+  .tile .t2 { font-size: 3.8cqw; opacity: .92; }
+
+  /* ---------- Spiel ---------- */
+  #game { justify-content: flex-start; padding: 0; }
+  .topbar { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px 2px; }
+  .home { font-size: 24px; background: rgba(255,255,255,.28); border: none; border-radius: 50%;
+          width: 46px; height: 46px; flex: none; cursor: pointer; color: #fff;
+          box-shadow: 0 4px 0 rgba(0,0,0,.18); }
+  .home:active { transform: translateY(3px); }
+  .stars { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px;
+           font-size: 26px; min-height: 34px; filter: drop-shadow(0 2px 1px rgba(0,0,0,.2)); }
+  .star { opacity: .35; transition: transform .3s, opacity .3s; }
+  .star.on { opacity: 1; transform: scale(1.15); color: #ffe34d; }
+  .spacer { width: 46px; flex: none; }
+
+  .prompt { display: flex; align-items: center; justify-content: center; gap: 10px;
+            margin: 6px 0 6px; width: 100%; padding: 0 10px; }
+  .mascot { width: 60px; height: 60px; flex: none; }
+  .mascot.cheer { animation: jump .5s ease 2; }
+  @keyframes jump { 0%,100%{transform:translateY(0) rotate(0)} 30%{transform:translateY(-22px) rotate(-12deg)} 60%{transform:translateY(-6px) rotate(10deg)} }
+  .ask { font-size: 6.4cqw; font-weight: 800; text-shadow: 0 3px 0 rgba(0,0,0,.18); line-height: 1.05; text-align: center; }
+  .ask b { color: #ffe34d; }
+  .ask .hint { font-size: 4.2cqw; font-weight: 700; opacity: .8; display: block; margin-top: 2px; }
+  .speaker { font-size: 28px; background: rgba(255,255,255,.28); border: none; border-radius: 50%;
+             width: 50px; height: 50px; flex: none; cursor: pointer; color: #fff;
+             box-shadow: 0 4px 0 rgba(0,0,0,.18); }
+  .speaker:active { transform: translateY(3px); }
+
+  .content { flex: 1; width: 100%; display: flex; flex-direction: column;
+             align-items: center; justify-content: center; padding: 4px 10px 12px; overflow: hidden; }
+
+  /* Buchstaben-Bühne */
+  .stage { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 10px; }
+  .bigemoji { font-size: 32cqw; line-height: 1; animation: bob 2.4s ease-in-out infinite;
+              filter: drop-shadow(0 8px 5px rgba(0,0,0,.28)); }
+  @keyframes bob { 0%,100%{transform:translateY(0) rotate(-4deg)} 50%{transform:translateY(-10px) rotate(4deg)} }
+  .word { font-size: 7.5cqw; font-weight: 800; text-shadow: 0 3px 0 rgba(0,0,0,.18); }
+
+  /* Zähl-Tiere */
+  .animals { display: flex; flex-wrap: wrap; gap: 4px 8px; justify-content: center; align-content: center;
+             flex: 1; width: 100%; padding: 6px; overflow: hidden; }
+  .animal { font-size: clamp(30px, 17cqw, 92px); line-height: 1; cursor: pointer;
+            transition: transform .12s, filter .12s; }
+  .animal:active { transform: scale(1.18); }
+  .animal.counted { filter: drop-shadow(0 0 8px #ffd84d); transform: scale(1.1); }
+
+  /* Auswahl-Knöpfe (Buchstaben & Zahlen) */
+  .choices { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; padding: 8px 4px 4px; }
+  .choice { background: #fff; color: #1c3b1a; border: none; border-radius: 20px; cursor: pointer;
+            font-weight: 800; font-family: inherit; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 7px 0 rgba(0,0,0,.18), 0 10px 18px rgba(0,0,0,.18);
+            transition: transform .08s, box-shadow .12s; }
+  .choice:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0,0,0,.18); }
+  .choice.big { width: 25cqw; height: 25cqw; max-width: 128px; max-height: 128px; font-size: 13cqw; }
+  .choice.emoji { font-size: 15cqw; }
+  .choice.right { animation: pop .45s ease; background: #b8f5b0; }
+  @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.1)} 100%{transform:scale(1)} }
+  .choice.wrong { animation: shake .4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-12px)} 40%{transform:translateX(12px)} 60%{transform:translateX(-8px)} 80%{transform:translateX(8px)} }
+  .choice.dim { opacity: .4; pointer-events: none; }
+
+  /* Flaggen-Karten */
+  .cards { display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 2px 4px 6px; flex: 1; justify-content: center; }
+  .card { background: #fff; border-radius: 18px; padding: 7px; cursor: pointer;
+          box-shadow: 0 7px 0 rgba(0,0,0,.18), 0 10px 18px rgba(0,0,0,.18);
+          transition: transform .08s, box-shadow .12s;
+          display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .card:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0,0,0,.18); }
+  .card svg { height: 18cqh; max-height: 140px; width: auto; max-width: 100%; border-radius: 8px;
+              display: block; margin: 0 auto; border: 2px solid rgba(0,0,0,.12); }
+  .card .label { color: #333; font-size: 4.8cqw; font-weight: 700; padding-bottom: 2px; }
+  .card.right { animation: pop .45s ease; }
+  .card.wrong { animation: shake .4s; }
+  .card.dim { opacity: .35; pointer-events: none; }
+
+  /* ---------- Gewinn ---------- */
+  #win .trophy { font-size: 30cqw; animation: jump .7s ease infinite; }
+  #win h2 { font-size: 8.5cqw; text-align: center; margin: 6px 0 26px; text-shadow: 0 4px 0 rgba(0,0,0,.18); }
+  .big-btn { font-family: inherit; border: none; cursor: pointer; background: #ffcb05; color: #1c3b1a;
+             font-size: 6.4cqw; font-weight: 800; padding: 3cqw 6cqw; border-radius: 999px;
+             box-shadow: 0 8px 0 #c79a00, 0 12px 22px rgba(0,0,0,.25); transition: transform .08s, box-shadow .08s; }
+  .big-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #c79a00, 0 4px 10px rgba(0,0,0,.25); }
+  .win-btns { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+  .ghost-btn { font-family: inherit; border: none; cursor: pointer; background: rgba(255,255,255,.25);
+               color: #fff; font-size: 4.6cqw; font-weight: 700; padding: 2.4cqw 6cqw; border-radius: 999px; }
+
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div id="app">
+
+  <!-- Menü -->
+  <section id="menu" class="screen active">
+    <h1>🦁 <span class="title">Lern-Held</span> 🎉</h1>
+    <p class="sub">Such dir ein Spiel aus!</p>
+    <div class="tiles">
+      <button class="tile" data-mode="letters">
+        <span class="ico">🔤</span>
+        <span class="txt"><span class="t1">Buchstaben-Detektiv</span><br><span class="t2">Womit fängt das Tier an?</span></span>
+      </button>
+      <button class="tile" data-mode="counting">
+        <span class="ico">🔢</span>
+        <span class="txt"><span class="t1">Zähl-Held</span><br><span class="t2">Wie viele Tiere sind das?</span></span>
+      </button>
+      <button class="tile" data-mode="flags">
+        <span class="ico">🏳️</span>
+        <span class="txt"><span class="t1">Flaggen-Held</span><br><span class="t2">Finde die richtige Flagge!</span></span>
+      </button>
+      <button class="tile" data-mode="english">
+        <span class="ico">🇬🇧</span>
+        <span class="txt"><span class="t1">Englisch-Held</span><br><span class="t2">Hör das Wort – finde das Bild!</span></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Spiel -->
+  <section id="game" class="screen">
+    <div class="topbar">
+      <button class="home" id="homeBtn" aria-label="Zurück zum Menü">🏠</button>
+      <div class="stars" id="stars"></div>
+      <div class="spacer"></div>
+    </div>
+    <div class="prompt">
+      <svg class="mascot" id="mascot" viewBox="0 0 100 100"></svg>
+      <div class="ask" id="ask">…</div>
+      <button class="speaker" id="speakBtn" aria-label="Nochmal anhören">🔊</button>
+    </div>
+    <div class="content" id="content"></div>
+  </section>
+
+  <!-- Gewinn -->
+  <section id="win" class="screen">
+    <div class="trophy">🏆</div>
+    <h2 id="winText">Super gemacht!<br>Du bist ein<br>Tier-Held! 🌟</h2>
+    <div class="win-btns">
+      <button class="big-btn" id="againBtn">Nochmal spielen!</button>
+      <button class="ghost-btn" id="menuBtn">🏠 Anderes Spiel</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+"use strict";
+
+/* ===================================================================
+   LERN-HELD — Lernspiele für Kinder (offline, eine Datei)
+   Hub mit zwei Spielen: Buchstaben-Detektiv & Zähl-Held
+   Thema: lustige wilde Tiere 🦁🐯🐊
+   =================================================================== */
+
+const ROUND_LENGTH = 6;   // so viele Sterne / Aufgaben pro Runde
+
+/* ---------- Tiere für den Buchstaben-Detektiv (Emoji, Wort, Anlaut) ---------- */
+const ANIMAL_WORDS = [
+  { e: "🦁", w: "Löwe",     l: "L" },
+  { e: "🐯", w: "Tiger",    l: "T" },
+  { e: "🐊", w: "Krokodil", l: "K" },
+  { e: "🐘", w: "Elefant",  l: "E" },
+  { e: "🦒", w: "Giraffe",  l: "G" },
+  { e: "🦓", w: "Zebra",    l: "Z" },
+  { e: "🐆", w: "Gepard",   l: "G" },
+  { e: "🐆", w: "Jaguar",   l: "J" },
+  { e: "🐆", w: "Leopard",  l: "L" },
+  { e: "🐒", w: "Affe",     l: "A" },
+  { e: "🐍", w: "Schlange", l: "S" },
+  { e: "🦏", w: "Nashorn",  l: "N" },
+  { e: "🦛", w: "Nilpferd", l: "N" },
+  { e: "🦍", w: "Gorilla",  l: "G" },
+  { e: "🐻", w: "Bär",      l: "B" },
+  { e: "🐺", w: "Wolf",     l: "W" },
+  { e: "🦊", w: "Fuchs",    l: "F" },
+  { e: "🐧", w: "Pinguin",  l: "P" },
+];
+
+/* ---------- Tiere zum Zählen (Emoji, Einzahl, Mehrzahl) ---------- */
+const ANIMAL_COUNT = [
+  { e: "🦁", s: "Löwe",     p: "Löwen" },
+  { e: "🐯", s: "Tiger",    p: "Tiger" },
+  { e: "🐊", s: "Krokodil", p: "Krokodile" },
+  { e: "🐘", s: "Elefant",  p: "Elefanten" },
+  { e: "🦒", s: "Giraffe",  p: "Giraffen" },
+  { e: "🦓", s: "Zebra",    p: "Zebras" },
+  { e: "🐆", s: "Gepard",   p: "Geparden" },
+  { e: "🐒", s: "Affe",     p: "Affen" },
+  { e: "🐍", s: "Schlange", p: "Schlangen" },
+  { e: "🦏", s: "Nashorn",  p: "Nashörner" },
+  { e: "🦛", s: "Nilpferd", p: "Nilpferde" },
+  { e: "🦍", s: "Gorilla",  p: "Gorillas" },
+];
+
+const ALPHA = "ABCDEFGHIJKLMNOPRSTUWZ".split(""); // kindgerechtes Alphabet (ohne Q V X Y)
+
+/* ---------- Länder für den Flaggen-Held ---------- */
+const COUNTRIES = [
+  { id: "de", name: "Deutschland" },
+  { id: "br", name: "Brasilien" },
+  { id: "ar", name: "Argentinien" },
+  { id: "fr", name: "Frankreich" },
+  { id: "es", name: "Spanien" },
+  { id: "en", name: "England" },
+  { id: "pt", name: "Portugal" },
+  { id: "nl", name: "Niederlande" },
+  { id: "it", name: "Italien" },
+  { id: "us", name: "USA" },
+  { id: "jp", name: "Japan" },
+  { id: "be", name: "Belgien" },
+  { id: "ch", name: "Schweiz" },
+];
+
+/* ---------- Englische Wörter für den Englisch-Held (Emoji, Englisch, Deutsch) ---------- */
+const ENGLISH = [
+  { e: "🐶", en: "Dog",      de: "Hund" },
+  { e: "🐱", en: "Cat",      de: "Katze" },
+  { e: "🐟", en: "Fish",     de: "Fisch" },
+  { e: "🐦", en: "Bird",     de: "Vogel" },
+  { e: "🐮", en: "Cow",      de: "Kuh" },
+  { e: "🐷", en: "Pig",      de: "Schwein" },
+  { e: "🐴", en: "Horse",    de: "Pferd" },
+  { e: "🦆", en: "Duck",     de: "Ente" },
+  { e: "🐻", en: "Bear",     de: "Bär" },
+  { e: "🦁", en: "Lion",     de: "Löwe" },
+  { e: "🐘", en: "Elephant", de: "Elefant" },
+  { e: "🐵", en: "Monkey",   de: "Affe" },
+  { e: "🍎", en: "Apple",    de: "Apfel" },
+  { e: "🍌", en: "Banana",   de: "Banane" },
+  { e: "🍰", en: "Cake",     de: "Kuchen" },
+  { e: "🥚", en: "Egg",      de: "Ei" },
+  { e: "🥛", en: "Milk",     de: "Milch" },
+  { e: "⚽", en: "Ball",     de: "Ball" },
+  { e: "🚗", en: "Car",      de: "Auto" },
+  { e: "🏠", en: "House",    de: "Haus" },
+  { e: "📖", en: "Book",     de: "Buch" },
+  { e: "☀️", en: "Sun",      de: "Sonne" },
+  { e: "⭐", en: "Star",     de: "Stern" },
+  { e: "🌙", en: "Moon",     de: "Mond" },
+  { e: "🌳", en: "Tree",     de: "Baum" },
+  { e: "🌸", en: "Flower",   de: "Blume" },
+  { e: "👟", en: "Shoe",     de: "Schuh" },
+  { e: "🎩", en: "Hat",      de: "Hut" },
+];
+
+/* ===================================================================
+   MASKOTTCHEN — fröhlicher Löwe (SVG, immer scharf)
+   =================================================================== */
+function lionMascot(){
+  let mane = "";
+  for (let i = 0; i < 12; i++){
+    const a = (i / 12) * Math.PI * 2;
+    const mx = 50 + Math.cos(a) * 36;
+    const my = 52 + Math.sin(a) * 36;
+    mane += `<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="13" fill="#E8920C"/>`;
+  }
+  return mane +
+    `<circle cx="50" cy="52" r="32" fill="#F7B733"/>` +              // Kopf
+    `<circle cx="33" cy="36" r="9" fill="#F7B733"/>` +              // Ohren
+    `<circle cx="67" cy="36" r="9" fill="#F7B733"/>` +
+    `<circle cx="33" cy="36" r="4" fill="#E8920C"/>` +
+    `<circle cx="67" cy="36" r="4" fill="#E8920C"/>` +
+    `<ellipse cx="50" cy="60" rx="20" ry="16" fill="#FCE3A8"/>` +   // Schnauze
+    `<circle cx="40" cy="48" r="5.5" fill="#222"/>` +               // Augen
+    `<circle cx="60" cy="48" r="5.5" fill="#222"/>` +
+    `<circle cx="41.5" cy="46.5" r="1.8" fill="#fff"/>` +
+    `<circle cx="61.5" cy="46.5" r="1.8" fill="#fff"/>` +
+    `<path d="M44 57 L56 57 L50 63 Z" fill="#5b3a1a"/>` +           // Nase
+    `<path d="M50 63 Q50 70 43 70 M50 63 Q50 70 57 70" fill="none" stroke="#5b3a1a" stroke-width="2.4" stroke-linecap="round"/>`; // Mund
+}
+
+/* ===================================================================
+   FLAGGEN als SVG (viewBox 0 0 90 60) — per Code gezeichnet, immer scharf
+   =================================================================== */
+function flagSVG(id){
+  const open = '<svg viewBox="0 0 90 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">';
+  const close = '</svg>';
+  let body = "";
+  switch (id) {
+    case "de":
+      body = rect(0,0,90,20,"#000") + rect(0,20,90,20,"#DD0000") + rect(0,40,90,20,"#FFCE00"); break;
+    case "fr":
+      body = rect(0,0,30,60,"#0055A4") + rect(30,0,30,60,"#fff") + rect(60,0,30,60,"#EF4135"); break;
+    case "it":
+      body = rect(0,0,30,60,"#009246") + rect(30,0,30,60,"#fff") + rect(60,0,30,60,"#CE2B37"); break;
+    case "be":
+      body = rect(0,0,30,60,"#0b0b0b") + rect(30,0,30,60,"#FAE042") + rect(60,0,30,60,"#ED2939"); break;
+    case "nl":
+      body = rect(0,0,90,20,"#AE1C28") + rect(0,20,90,20,"#fff") + rect(0,40,90,20,"#21468B"); break;
+    case "jp":
+      body = rect(0,0,90,60,"#fff") + svgCircle(45,30,15,"#BC002D"); break;
+    case "en":
+      body = rect(0,0,90,60,"#fff") + rect(0,24,90,12,"#CE1124") + rect(39,0,12,60,"#CE1124"); break;
+    case "es":
+      body = rect(0,0,90,15,"#AA151B") + rect(0,15,90,30,"#F1BF00") + rect(0,45,90,15,"#AA151B")
+           + roundedRect(14,22,12,16,2,"#AA151B") + rect(17,25,6,3,"#F1BF00"); break;
+    case "ar":
+      body = rect(0,0,90,20,"#74ACDF") + rect(0,20,90,20,"#fff") + rect(0,40,90,20,"#74ACDF")
+           + sun(45,30,5,8.5,"#F6B40E"); break;
+    case "br":
+      body = rect(0,0,90,60,"#009C3B")
+           + '<polygon points="45,8 82,30 45,52 8,30" fill="#FFDF00"/>'
+           + svgCircle(45,30,11,"#002776")
+           + '<clipPath id="brc"><circle cx="45" cy="30" r="11"/></clipPath>'
+           + '<path d="M34,33 Q45,27 56,33 L56,30 Q45,24 34,30 Z" fill="#fff" clip-path="url(#brc)"/>'; break;
+    case "pt":
+      body = rect(0,0,36,60,"#046A38") + rect(36,0,54,60,"#DA291C")
+           + ring(36,30,9,2.5,"#FFCC00") + svgCircle(36,30,4.5,"#DA291C") + ring(36,30,4.5,1,"#fff"); break;
+    case "us": {
+      for (let i = 0; i < 13; i++) body += rect(0, i*(60/13), 90, 60/13, i % 2 === 0 ? "#B22234" : "#fff");
+      const cantonH = 60/13*7;
+      body += rect(0,0,36,cantonH,"#3C3B6E");
+      for (let r = 0; r < 5; r++){
+        const y = 4 + r*(cantonH-6)/4;
+        const cols = r % 2 === 0 ? 5 : 4;
+        for (let c = 0; c < cols; c++){
+          const x = 5 + c*7 + (r % 2 === 0 ? 0 : 3.5);
+          body += svgCircle(x, y, 1.6, "#fff");
+        }
+      }
+      break;
+    }
+    case "ch":
+      body = rect(15,0,60,60,"#D52B1E") + rect(27,24,36,12,"#fff") + rect(39,12,12,36,"#fff"); break;
+    default:
+      body = rect(0,0,90,60,"#ccc");
+  }
+  return open + body + close;
+}
+function rect(x,y,w,h,fill){ return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`; }
+function roundedRect(x,y,w,h,r,fill){ return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${fill}"/>`; }
+function svgCircle(cx,cy,r,fill){ return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}"/>`; }
+function ring(cx,cy,r,sw,stroke){ return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${stroke}" stroke-width="${sw}"/>`; }
+function sun(cx,cy,rInner,rOuter,fill){
+  let rays = "";
+  for (let i = 0; i < 16; i++){
+    const a = (i/16)*Math.PI*2;
+    const x1 = cx + Math.cos(a)*rInner, y1 = cy + Math.sin(a)*rInner;
+    const x2 = cx + Math.cos(a)*rOuter, y2 = cy + Math.sin(a)*rOuter;
+    rays += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${fill}" stroke-width="1.4"/>`;
+  }
+  return rays + svgCircle(cx,cy,rInner,fill);
+}
+
+/* ===================================================================
+   SOUND (Web Audio API — keine Dateien nötig)
+   =================================================================== */
+let audioCtx = null;
+function initAudio(){
+  if (!audioCtx){ const AC = window.AudioContext || window.webkitAudioContext; if (AC) audioCtx = new AC(); }
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+}
+function tone(freq, start, dur, type = "triangle", vol = 0.25){
+  if (!audioCtx) return;
+  const t0 = audioCtx.currentTime + start;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type; osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(t0); osc.stop(t0 + dur + 0.02);
+}
+function playCheer(){ [523, 659, 784, 1047].forEach((f, i) => tone(f, i*0.09, 0.18, "triangle", 0.28)); tone(1568, 0.40, 0.3, "triangle", 0.22); }
+function playWrong(){ tone(330, 0, 0.16, "sine", 0.22); tone(247, 0.14, 0.22, "sine", 0.22); }
+function playBlip(){ tone(880, 0, 0.10, "triangle", 0.20); } // beim Tier-Antippen
+
+/* ===================================================================
+   SPRACHE (Web Speech API — Stimme des Geräts, offline)
+   =================================================================== */
+let germanVoice = null, englishVoice = null;
+function pickVoice(){
+  if (!("speechSynthesis" in window)) return;
+  const voices = speechSynthesis.getVoices();
+  germanVoice  = voices.find(v => /de(-|_)/i.test(v.lang)) || voices.find(v => /^de/i.test(v.lang)) || null;
+  englishVoice = voices.find(v => /en(-|_)/i.test(v.lang)) || voices.find(v => /^en/i.test(v.lang)) || null;
+}
+if ("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(text){
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "de-DE"; if (germanVoice) u.voice = germanVoice;
+  u.rate = 0.92; u.pitch = 1.15; u.volume = 1;
+  speechSynthesis.speak(u);
+}
+function speakEN(text){
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-US"; if (englishVoice) u.voice = englishVoice;
+  u.rate = 0.85; u.pitch = 1.1; u.volume = 1;
+  speechSynthesis.speak(u);
+}
+
+/* ===================================================================
+   HILFSFUNKTIONEN
+   =================================================================== */
+function byId(id){ return document.getElementById(id); }
+function shuffle(a){ a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function randInt(min, max){ return Math.floor(Math.random()*(max-min+1)) + min; }
+
+const el = {
+  screens: { menu: byId("menu"), game: byId("game"), win: byId("win") },
+  stars: byId("stars"),
+  ask: byId("ask"),
+  content: byId("content"),
+  mascot: byId("mascot"),
+  speakBtn: byId("speakBtn"),
+  homeBtn: byId("homeBtn"),
+  againBtn: byId("againBtn"),
+  menuBtn: byId("menuBtn"),
+  winText: byId("winText"),
+};
+el.mascot.innerHTML = lionMascot();
+
+function showScreen(name){
+  Object.values(el.screens).forEach(s => s.classList.remove("active"));
+  el.screens[name].classList.add("active");
+}
+
+/* ===================================================================
+   SPIEL-ZUSTAND
+   =================================================================== */
+let mode = null;     // "letters" | "counting"
+let queue = [];      // verbleibende Aufgaben dieser Runde
+let score = 0;       // gesammelte Sterne
+let current = null;  // aktuelle Aufgabe
+let locked = false;  // sperrt Eingaben während der Jubel-Animation
+
+function startGame(m){
+  initAudio();
+  mode = m; score = 0;
+  if (m === "letters")  queue = shuffle(ANIMAL_WORDS).slice(0, ROUND_LENGTH);
+  if (m === "counting") queue = shuffle(ANIMAL_COUNT).slice(0, ROUND_LENGTH);
+  if (m === "flags")    queue = shuffle(COUNTRIES).slice(0, ROUND_LENGTH);
+  if (m === "english")  queue = shuffle(ENGLISH).slice(0, ROUND_LENGTH);
+  buildStars();
+  showScreen("game");
+  nextQuestion();
+}
+
+function buildStars(){
+  el.stars.innerHTML = "";
+  for (let i = 0; i < ROUND_LENGTH; i++){
+    const s = document.createElement("span");
+    s.className = "star"; s.textContent = "★";
+    el.stars.appendChild(s);
+  }
+}
+function lightStars(){
+  const stars = el.stars.children;
+  for (let i = 0; i < stars.length; i++) stars[i].classList.toggle("on", i < score);
+}
+
+function nextQuestion(){
+  if (queue.length === 0){ winRound(); return; }
+  current = queue.shift();
+  locked = false;
+  el.content.innerHTML = "";
+  if (mode === "letters")  renderLetters(current);
+  if (mode === "counting") renderCounting(current);
+  if (mode === "flags")    renderFlags(current);
+  if (mode === "english")  renderEnglish(current);
+  setTimeout(askAloud, 350);
+}
+
+function askAloud(){
+  if (mode === "letters")  speak("Womit fängt " + current.w + " an?");
+  if (mode === "counting") speak("Wie viele " + current.plural + "?");
+  if (mode === "flags")    speak("Finde " + current.name);
+  if (mode === "english")  speakEN("Where is the " + current.en.toLowerCase() + "?");
+}
+
+/* ---------- Buchstaben-Detektiv ---------- */
+function renderLetters(item){
+  el.ask.innerHTML = `Womit fängt <b>${item.w}</b> an?`;
+
+  const stage = document.createElement("div");
+  stage.className = "stage";
+  stage.innerHTML = `<div class="bigemoji">${item.e}</div><div class="word">${item.w}</div>`;
+  el.content.appendChild(stage);
+
+  const choices = document.createElement("div");
+  choices.className = "choices";
+  letterChoices(item.l).forEach(letter => {
+    const b = document.createElement("button");
+    b.className = "choice big"; b.textContent = letter;
+    b.addEventListener("click", () => {
+      speak(letter);                                  // Buchstabe vorlesen (Erkunden)
+      handleAnswer(letter === item.l, b,
+        () => speak("Richtig! " + item.w + " fängt mit " + item.l + " an!"));
+    });
+    choices.appendChild(b);
+  });
+  el.content.appendChild(choices);
+}
+function letterChoices(correct){
+  const set = new Set([correct]);
+  for (const l of shuffle(ALPHA.filter(x => x !== correct))){ if (set.size >= 3) break; set.add(l); }
+  return shuffle([...set]);
+}
+
+/* ---------- Zähl-Held ---------- */
+function renderCounting(animal){
+  // Schwierigkeit steigt sanft mit dem Fortschritt
+  const idx = ROUND_LENGTH - queue.length - 1;       // 0-basiert
+  const maxCount = Math.min(3 + idx, 9);
+  const target = randInt(1, maxCount);
+  animal.plural = animal.p;                            // für askAloud
+  current.count = target;
+
+  el.ask.innerHTML = `Wie viele <b>${animal.p}</b>?`;
+
+  // Tiere zum Antippen (mitzählen)
+  const grid = document.createElement("div");
+  grid.className = "animals";
+  let counted = 0;
+  for (let i = 0; i < target; i++){
+    const a = document.createElement("span");
+    a.className = "animal"; a.textContent = animal.e;
+    a.addEventListener("click", () => {
+      if (a.classList.contains("counted")) return;
+      a.classList.add("counted");
+      counted++; playBlip(); speak(String(counted));
+    });
+    grid.appendChild(a);
+  }
+  el.content.appendChild(grid);
+
+  // Zahl-Knöpfe
+  const choices = document.createElement("div");
+  choices.className = "choices";
+  numberChoices(target, maxCount).forEach(n => {
+    const b = document.createElement("button");
+    b.className = "choice big"; b.textContent = String(n);
+    b.addEventListener("click", () => {
+      handleAnswer(n === target, b,
+        () => speak("Richtig! " + target + " " + (target === 1 ? animal.s : animal.p) + "!"));
+    });
+    choices.appendChild(b);
+  });
+  el.content.appendChild(choices);
+}
+function numberChoices(target, max){
+  const set = new Set([target]);
+  const cands = [target-1, target+1, target-2, target+2, target+3].filter(n => n >= 1);
+  for (const n of shuffle(cands)){ if (set.size >= 3) break; set.add(n); }
+  let extra = 1;
+  while (set.size < 3){ if (extra !== target) set.add(extra); extra++; }
+  return shuffle([...set]);
+}
+
+/* ---------- Flaggen-Held ---------- */
+function renderFlags(item){
+  el.ask.innerHTML = `Finde <b>${item.name}</b>`;
+  const distractors = shuffle(COUNTRIES.filter(c => c.id !== item.id)).slice(0, 2);
+  const options = shuffle([item, ...distractors]);
+
+  const wrap = document.createElement("div");
+  wrap.className = "cards";
+  options.forEach(c => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = flagSVG(c.id) + `<span class="label">${c.name}</span>`;
+    card.addEventListener("click", () => {
+      handleAnswer(c.id === item.id, card,
+        () => speak(pick(["Richtig!", "Super! Genau richtig!", "Jaaa! Richtig!", "Klasse gemacht!"])));
+    });
+    wrap.appendChild(card);
+  });
+  el.content.appendChild(wrap);
+}
+
+/* ---------- Englisch-Held ---------- */
+function renderEnglish(item){
+  el.ask.innerHTML = `Wo ist <b>${item.en}</b>?<span class="hint">(${item.de})</span>`;
+  const distractors = shuffle(ENGLISH.filter(x => x.en !== item.en)).slice(0, 2);
+  const options = shuffle([item, ...distractors]);
+
+  const choices = document.createElement("div");
+  choices.className = "choices";
+  options.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "choice big emoji"; b.textContent = o.e;
+    b.addEventListener("click", () => {
+      handleAnswer(o.en === item.en, b,
+        () => speakEN(pick(["Yes! " + item.en + "!", "Great job!", "Well done! " + item.en + "!", "Correct! " + item.en + "!"])));
+    });
+    choices.appendChild(b);
+  });
+  el.content.appendChild(choices);
+}
+
+/* ---------- gemeinsame Antwort-Logik ---------- */
+function handleAnswer(isCorrect, btn, praiseFn){
+  if (locked) return;
+  if (isCorrect){
+    locked = true;
+    score++; lightStars();
+    btn.classList.add("right");
+    [...btn.parentElement.children].forEach(c => { if (c !== btn) c.classList.add("dim"); });
+    el.mascot.classList.remove("cheer"); void el.mascot.offsetWidth; el.mascot.classList.add("cheer");
+    playCheer(); confettiBurst();
+    setTimeout(() => { speechSynthesis && speechSynthesis.cancel(); praiseFn(); }, 120);
+    setTimeout(nextQuestion, 1900);
+  } else {
+    btn.classList.remove("wrong"); void btn.offsetWidth; btn.classList.add("wrong");
+    playWrong();
+    if (mode === "english") speakEN(pick(["Try again!", "Almost! Try again.", "Oops! Try another one."]));
+    else                    speak(pick(["Versuch es nochmal!", "Probier noch eine!", "Fast! Schau nochmal."]));
+  }
+}
+
+function winRound(){
+  const title = mode === "letters" ? "Buchstaben-Held"
+              : mode === "counting" ? "Zähl-Held"
+              : mode === "flags" ? "Flaggen-Held"
+              : "Englisch-Held";
+  el.winText.innerHTML = `Super gemacht!<br>Du bist ein<br>${title}! 🌟`;
+  showScreen("win");
+  playCheer();
+  setTimeout(() => { confettiBurst(); confettiBurst(); }, 150);
+  if (mode === "english") setTimeout(() => speakEN("Well done! You are an English hero!"), 400);
+  else                    setTimeout(() => speak("Super gemacht! Du bist ein " + title + "!"), 400);
+}
+
+/* ===================================================================
+   KONFETTI (Canvas)
+   =================================================================== */
+const cv = byId("confetti");
+const ctx = cv.getContext("2d");
+let parts = [];
+let rafRunning = false;
+function resizeCanvas(){ cv.width = window.innerWidth; cv.height = window.innerHeight; }
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+const COLORS = ["#ffcb05","#ff5252","#4aa3ff","#57b84a","#ff8f00","#ffffff","#b14aff"];
+function confettiBurst(){
+  for (let i = 0; i < 90; i++){
+    parts.push({
+      x: cv.width/2 + (Math.random()-0.5)*cv.width*0.5,
+      y: cv.height*0.35 + (Math.random()-0.5)*60,
+      vx: (Math.random()-0.5)*9, vy: Math.random()*-10 - 4,
+      g: 0.32 + Math.random()*0.18, size: 6 + Math.random()*8,
+      color: COLORS[Math.floor(Math.random()*COLORS.length)],
+      rot: Math.random()*Math.PI, vr: (Math.random()-0.5)*0.4, life: 0,
+    });
+  }
+  if (!rafRunning){ rafRunning = true; requestAnimationFrame(tick); }
+}
+function tick(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  parts = parts.filter(p => p.life < 220 && p.y < cv.height + 40);
+  parts.forEach(p => {
+    p.life++; p.vy += p.g; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.vx *= 0.99;
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+    ctx.fillStyle = p.color; ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.6); ctx.restore();
+  });
+  if (parts.length > 0){ requestAnimationFrame(tick); } else { rafRunning = false; ctx.clearRect(0,0,cv.width,cv.height); }
+}
+
+/* ===================================================================
+   EVENTS
+   =================================================================== */
+document.querySelectorAll(".tile").forEach(t => {
+  t.addEventListener("click", () => { initAudio(); startGame(t.dataset.mode); });
+});
+el.speakBtn.addEventListener("click", () => { initAudio(); askAloud(); });
+el.homeBtn.addEventListener("click", () => { speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
+el.againBtn.addEventListener("click", () => { initAudio(); startGame(mode); });
+el.menuBtn.addEventListener("click", () => { speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
+
+window.addEventListener("load", () => setTimeout(pickVoice, 200));
+</script>
+
+<!-- Offline-Fähigkeit: Service-Worker (greift nur über https/GitHub Pages, lokal harmlos ignoriert) -->
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
