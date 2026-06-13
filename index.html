@@ -108,6 +108,7 @@
              width: 50px; height: 50px; flex: none; cursor: pointer; color: #fff;
              box-shadow: 0 4px 0 rgba(0,0,0,.18); }
   .speaker:active { transform: translateY(3px); }
+  .speaker.muted { opacity: .6; }
 
   .content { flex: 1; width: 100%; display: flex; flex-direction: column;
              align-items: center; justify-content: center; overflow: hidden;
@@ -429,12 +430,13 @@ function sun(cx,cy,rInner,rOuter,fill){
    SOUND (Web Audio API — keine Dateien nötig)
    =================================================================== */
 let audioCtx = null;
+let muted = (function(){ try { return localStorage.getItem("lernheld-muted") === "1"; } catch (e) { return false; } })();
 function initAudio(){
   if (!audioCtx){ const AC = window.AudioContext || window.webkitAudioContext; if (AC) audioCtx = new AC(); }
   if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
 }
 function tone(freq, start, dur, type = "triangle", vol = 0.25){
-  if (!audioCtx) return;
+  if (muted || !audioCtx) return;
   const t0 = audioCtx.currentTime + start;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
@@ -461,7 +463,7 @@ function pickVoice(){
 }
 if ("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 function speak(text){
-  if (!("speechSynthesis" in window)) return;
+  if (muted || !("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "de-DE"; if (germanVoice) u.voice = germanVoice;
@@ -469,7 +471,7 @@ function speak(text){
   speechSynthesis.speak(u);
 }
 function speakEN(text){
-  if (!("speechSynthesis" in window)) return;
+  if (muted || !("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "en-US"; if (englishVoice) u.voice = englishVoice;
@@ -498,10 +500,18 @@ const el = {
   winText: byId("winText"),
 };
 el.mascot.innerHTML = lionMascot();
+updateSpeaker();
 
 function showScreen(name){
   Object.values(el.screens).forEach(s => s.classList.remove("active"));
   el.screens[name].classList.add("active");
+}
+
+/* Lautsprecher-Symbol an den Ton-Status anpassen (🔊 an / 🔇 durchgestrichen = aus) */
+function updateSpeaker(){
+  el.speakBtn.textContent = muted ? "🔇" : "🔊";
+  el.speakBtn.classList.toggle("muted", muted);
+  el.speakBtn.setAttribute("aria-label", muted ? "Ton ist aus – zum Einschalten tippen" : "Ton ist an – zum Ausschalten tippen");
 }
 
 /* ===================================================================
@@ -752,7 +762,14 @@ function tick(){
 document.querySelectorAll(".tile").forEach(t => {
   t.addEventListener("click", () => { initAudio(); startGame(t.dataset.mode); });
 });
-el.speakBtn.addEventListener("click", () => { initAudio(); askAloud(); });
+el.speakBtn.addEventListener("click", () => {
+  initAudio();
+  muted = !muted;
+  try { localStorage.setItem("lernheld-muted", muted ? "1" : "0"); } catch (e) {}
+  updateSpeaker();
+  if (muted) { if ("speechSynthesis" in window) speechSynthesis.cancel(); }
+  else { askAloud(); }   // beim Einschalten gleich die aktuelle Aufgabe vorlesen
+});
 el.homeBtn.addEventListener("click", () => { speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
 el.againBtn.addEventListener("click", () => { initAudio(); startGame(mode); });
 el.menuBtn.addEventListener("click", () => { speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
