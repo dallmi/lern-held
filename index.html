@@ -68,6 +68,7 @@
   .tile[data-mode="rhyme"]    { background: linear-gradient(135deg,#ff8a5c 0%,#ff5e7e 100%); }
   .tile[data-mode="counting"] { background: linear-gradient(135deg,#3aa0ff 0%,#8a5bff 100%); }
   .tile[data-mode="trace"]    { background: linear-gradient(135deg,#ffb74d 0%,#fb8c00 100%); }
+  .tile[data-mode="wordtrace"]{ background: linear-gradient(135deg,#2bbf8a 0%,#1b9e6a 100%); }
   .tile[data-mode="memory"]   { background: linear-gradient(135deg,#6a7bff 0%,#5a32c8 100%); }
   .tile[data-mode="flags"]    { background: linear-gradient(135deg,#2fd36b 0%,#0fa89a 100%); }
   .tile[data-mode="capitals"] { background: linear-gradient(135deg,#19c2e6 0%,#2f72e8 100%); }
@@ -82,6 +83,7 @@
   .tile[data-mode="rhyme"] .ico    { animation-delay: .2s; }
   .tile[data-mode="counting"] .ico { animation-delay: .4s; }
   .tile[data-mode="trace"] .ico    { animation-delay: .6s; }
+  .tile[data-mode="wordtrace"] .ico { animation-delay: .9s; }
   .tile[data-mode="flags"] .ico    { animation-delay: .8s; }
   .tile[data-mode="capitals"] .ico { animation-delay: 1.2s; }
   .tile[data-mode="english"] .ico  { animation-delay: 1.6s; }
@@ -152,6 +154,11 @@
 
   /* Zahlen malen */
   .tracewrap { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; }
+  .tracewrap.col { flex-direction: column; gap: 10px; }
+  .wordstrip { display: flex; gap: 7px; font-weight: 800; font-size: 9cqw; text-shadow: 0 2px 0 rgba(0,0,0,.2); }
+  .wordstrip .wl { color: #fff; opacity: .45; transition: transform .2s, opacity .2s, color .2s; }
+  .wordstrip .wl.active { opacity: 1; color: #ffe34d; transform: scale(1.18); }
+  .wordstrip .wl.done { opacity: 1; color: #c4f3b4; }
   .tracecanvas { touch-action: none; background: #fff; border-radius: 22px;
                  width: 84cqw; max-width: 340px; aspect-ratio: 1;
                  box-shadow: 0 7px 0 rgba(0,0,0,.18), 0 10px 18px rgba(0,0,0,.18); }
@@ -250,6 +257,10 @@
       <button class="tile" data-mode="trace">
         <span class="ico">✏️</span>
         <span class="txt"><span class="t1">Zahlen malen</span><br><span class="t2">Male die Zahl mit dem Finger nach!</span></span>
+      </button>
+      <button class="tile" data-mode="wordtrace">
+        <span class="ico">✍️</span>
+        <span class="txt"><span class="t1">Wörter schreiben</span><br><span class="t2">Schreibe deinen Namen & mehr!</span></span>
       </button>
       <button class="tile" data-mode="flags">
         <span class="ico">🏳️</span>
@@ -464,6 +475,20 @@ function ellipseStroke(cx,cy,rx,ry,startDeg){
   for (let i = 0; i <= steps; i++){ const a = (startDeg + i/steps*360)*Math.PI/180; p.push([cx+Math.cos(a)*rx, cy+Math.sin(a)*ry]); }
   return p;
 }
+
+/* ---------- Großbuchstaben als Striche (0..100); O wird als Ellipse erzeugt ---------- */
+const LETTER_PATHS = {
+  A: [[[26,86],[50,14],[74,86]], [[36,56],[64,56]]],
+  B: [[[32,16],[32,86]], [[32,16],[58,18],[66,30],[58,46],[32,48]], [[32,48],[60,52],[70,66],[60,82],[32,84]]],
+  E: [[[70,16],[32,16],[32,86],[70,86]], [[32,50],[62,50]]],
+  L: [[[34,16],[34,86],[70,86]]],
+  M: [[[26,86],[26,16],[50,54],[74,16],[74,86]]],
+  P: [[[32,86],[32,16],[62,16],[70,30],[62,46],[32,48]]],
+  T: [[[24,16],[76,16]], [[50,16],[50,86]]],
+  U: [[[28,16],[28,62],[38,80],[62,80],[72,62],[72,16]]],
+};
+/* Sinnvolle, kurze Wörter (Name + Familie + Alltag). Nur Buchstaben aus LETTER_PATHS/O. */
+const TRACE_WORDS = ["MATTEO", "MAMA", "PAPA", "OMA", "OPA", "AUTO", "BALL"];
 function digitStrokes(n){ return (n === 0) ? [ellipseStroke(50,50,23,35,-90)] : DIGIT_PATHS[n]; }
 function resample(stroke, spacing){
   const out = [stroke[0].slice()]; let prev = stroke[0];
@@ -948,11 +973,12 @@ function startGame(m){
   if (m === "letters")  queue = shuffle(ANIMAL_WORDS).slice(0, ROUND_LENGTH);
   if (m === "rhyme")    queue = shuffle(RHYMES).slice(0, ROUND_LENGTH);
   if (m === "trace")    queue = shuffle([0,1,2,3,4,5,6,7,8,9]).slice(0, ROUND_LENGTH);
+  if (m === "wordtrace") queue = shuffle(TRACE_WORDS).slice(0, 4);
   if (m === "counting") queue = shuffle(ANIMAL_COUNT).slice(0, ROUND_LENGTH);
   if (m === "flags")    queue = shuffle(COUNTRIES).slice(0, ROUND_LENGTH);
   if (m === "english")  queue = shuffle(ENGLISH).slice(0, ROUND_LENGTH);
   if (m === "capitals") queue = shuffle(CAPITALS).slice(0, ROUND_LENGTH);
-  buildStars();
+  buildStars(queue.length);
   showScreen("game");
   nextQuestion();
 }
@@ -984,6 +1010,7 @@ function nextQuestion(){
   if (mode === "capitals") renderCapitals(current);
   if (mode === "rhyme")    renderRhyme(current);
   if (mode === "trace")    renderTrace(current);
+  if (mode === "wordtrace") renderWord(current);
   setTimeout(askAloud, 350);
 }
 
@@ -996,6 +1023,7 @@ function askAloud(){
   if (mode === "rhyme")    speak("Was reimt sich auf " + current.word + "?");
   if (mode === "memory")   speak("Finde die Tier-Paare!");
   if (mode === "trace")    speak("Male die " + current + " nach!");
+  if (mode === "wordtrace") speak("Schreibe " + nice(current) + "!");
 }
 
 /* ---------- Buchstaben-Detektiv ---------- */
@@ -1246,49 +1274,51 @@ function onMemoryPick(card){
   }
 }
 
-/* ---------- Zahlen malen (mit dem Finger nachfahren) ---------- */
-let traceDone = false;
-function renderTrace(n){
-  el.ask.innerHTML = `Male die <b>${n}</b> nach!`;
-  traceDone = false;
-  const wrap = document.createElement("div");
-  wrap.className = "tracewrap";
-  const cv = document.createElement("canvas");
-  cv.className = "tracecanvas"; cv.width = 300; cv.height = 300;
-  wrap.appendChild(cv);
-  el.content.appendChild(wrap);
-  setupTrace(cv, n);
+/* ---------- Zahlen & Wörter malen (mit dem Finger nachfahren) ---------- */
+function glyphStrokes(g){ return (typeof g === "number") ? digitStrokes(g) : letterStrokes(g); }
+function letterStrokes(ch){ return (ch === "O") ? [ellipseStroke(50,50,24,36,-90)] : (LETTER_PATHS[ch] || [ellipseStroke(50,50,22,34,-90)]); }
+function nice(word){ return word.charAt(0) + word.slice(1).toLowerCase(); }   // MATTEO -> Matteo (zum Vorlesen)
+
+/* Erfolg eines Glyphs/Worts: Stern, Jubel, weiter wenn Lob fertig gesprochen */
+function glyphSuccess(praiseText){
+  score++; lightStars();
+  el.mascot.classList.remove("cheer"); void el.mascot.offsetWidth; el.mascot.classList.add("cheer");
+  playCheer(); confettiBurst();
+  let done = false;
+  const go = () => { if (done) return; done = true; setTimeout(nextQuestion, 800); };
+  speak(praiseText, go);
+  setTimeout(go, 9000);
 }
-function setupTrace(cv, n){
+
+/* Eine Mal-Fläche für genau ein Zeichen; ruft onComplete() bei genug Abdeckung. */
+function setupTrace(cv, glyph, onComplete){
   const ctx = cv.getContext("2d");
-  const S = 3;                       // 0..100  ->  0..300
-  const strokes = digitStrokes(n);
+  const S = 3;
+  const strokes = glyphStrokes(glyph);
   const wps = [];
   strokes.forEach(st => resample(st, 5).forEach(pt => wps.push({ x: pt[0]*S, y: pt[1]*S, hit: false })));
-
-  function drawGuide(){
-    ctx.clearRect(0,0,300,300);
-    ctx.lineCap = "round"; ctx.lineJoin = "round";
-    ctx.strokeStyle = "#dfe7f0"; ctx.lineWidth = 24;
+  let localDone = false;
+  function drawStrokes(col, lw){
+    ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = col; ctx.lineWidth = lw;
     strokes.forEach(st => { ctx.beginPath(); st.forEach((pt,i) => { const x=pt[0]*S, y=pt[1]*S; i ? ctx.lineTo(x,y) : ctx.moveTo(x,y); }); ctx.stroke(); });
-    strokes.forEach(st => {                 // grüner Startpunkt je Strich
-      const x = st[0][0]*S, y = st[0][1]*S;
-      ctx.fillStyle = "#34a853"; ctx.beginPath(); ctx.arc(x,y,12,0,7); ctx.fill();
-      ctx.fillStyle = "#fff";    ctx.beginPath(); ctx.arc(x,y,4.5,0,7); ctx.fill();
-    });
   }
-  drawGuide();
-
+  ctx.clearRect(0,0,300,300);
+  drawStrokes("#dfe7f0", 24);
+  strokes.forEach(st => {                   // grüner Startpunkt je Strich
+    const x = st[0][0]*S, y = st[0][1]*S;
+    ctx.fillStyle = "#34a853"; ctx.beginPath(); ctx.arc(x,y,12,0,7); ctx.fill();
+    ctx.fillStyle = "#fff";    ctx.beginPath(); ctx.arc(x,y,4.5,0,7); ctx.fill();
+  });
   let drawing = false, last = null;
   function pos(e){ const r = cv.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*300, y:(e.clientY-r.top)/r.height*300 }; }
   function markHits(p){
     let changed = false;
     wps.forEach(w => { if (!w.hit && Math.hypot(w.x-p.x, w.y-p.y) < 28){ w.hit = true; changed = true;
       ctx.fillStyle = "#34a853"; ctx.beginPath(); ctx.arc(w.x,w.y,5,0,7); ctx.fill(); } });
-    if (changed && wps.filter(w => w.hit).length / wps.length >= 0.72) finishTrace();
+    if (changed && wps.filter(w => w.hit).length / wps.length >= 0.72) finish();
   }
-  function down(e){ if (traceDone) return; e.preventDefault(); drawing = true; try { cv.setPointerCapture(e.pointerId); } catch(x){} last = pos(e); markHits(last); }
-  function move(e){ if (!drawing || traceDone) return; e.preventDefault(); const p = pos(e);
+  function down(e){ if (localDone) return; e.preventDefault(); drawing = true; try { cv.setPointerCapture(e.pointerId); } catch(x){} last = pos(e); markHits(last); }
+  function move(e){ if (!drawing || localDone) return; e.preventDefault(); const p = pos(e);
     ctx.strokeStyle = "#ff8a3c"; ctx.lineWidth = 16; ctx.lineCap = "round"; ctx.lineJoin = "round";
     ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last = p; markHits(p); }
   function up(){ drawing = false; }
@@ -1296,18 +1326,45 @@ function setupTrace(cv, n){
   cv.addEventListener("pointermove", move);
   cv.addEventListener("pointerup", up);
   cv.addEventListener("pointercancel", up);
+  function finish(){ if (localDone) return; localDone = true; drawStrokes("#34a853", 24); onComplete(); }
+}
+function newCanvas(){ const cv = document.createElement("canvas"); cv.className = "tracecanvas"; cv.width = 300; cv.height = 300; return cv; }
 
-  function finishTrace(){
-    if (traceDone) return; traceDone = true;
-    ctx.strokeStyle = "#34a853"; ctx.lineWidth = 24; ctx.lineCap = "round"; ctx.lineJoin = "round";
-    strokes.forEach(st => { ctx.beginPath(); st.forEach((pt,i) => { const x=pt[0]*S, y=pt[1]*S; i ? ctx.lineTo(x,y) : ctx.moveTo(x,y); }); ctx.stroke(); });
-    score++; lightStars();
-    el.mascot.classList.remove("cheer"); void el.mascot.offsetWidth; el.mascot.classList.add("cheer");
-    playCheer(); confettiBurst();
-    let done = false;
-    const go = () => { if (done) return; done = true; setTimeout(nextQuestion, 700); };
-    speak("Super! Das ist die " + n + "!", go);
-    setTimeout(go, 8000);
+/* Zahlen malen */
+function renderTrace(n){
+  el.ask.innerHTML = `Male die <b>${n}</b> nach!`;
+  const wrap = document.createElement("div"); wrap.className = "tracewrap";
+  const cv = newCanvas(); wrap.appendChild(cv); el.content.appendChild(wrap);
+  setupTrace(cv, n, () => glyphSuccess("Super! Das ist die " + n + "!"));
+}
+
+/* Wörter schreiben (Buchstabe für Buchstabe) */
+let wordState = null;
+function renderWord(word){
+  el.ask.innerHTML = `Schreibe <b>${nice(word)}</b>!`;
+  wordState = { word, idx: 0 };
+  const wrap = document.createElement("div"); wrap.className = "tracewrap col";
+  const strip = document.createElement("div"); strip.className = "wordstrip"; strip.id = "wordstrip";
+  [...word].forEach((ch,i) => { const s = document.createElement("span"); s.className = "wl " + (i === 0 ? "active" : "todo"); s.textContent = ch; strip.appendChild(s); });
+  const cv = newCanvas();
+  wrap.appendChild(strip); wrap.appendChild(cv);
+  el.content.appendChild(wrap);
+  setupTrace(cv, word[0], onLetterDone);
+}
+function onLetterDone(){
+  const st = wordState; if (!st) return;
+  const strip = document.getElementById("wordstrip");
+  if (strip) strip.children[st.idx].className = "wl done";
+  st.idx++;
+  if (st.idx >= st.word.length){
+    glyphSuccess("Super! Das ist " + nice(st.word) + "!");   // Wort fertig -> Stern + weiter
+  } else {
+    if (strip) strip.children[st.idx].className = "wl active";
+    const wrap = el.content.querySelector(".tracewrap.col");
+    const cv = newCanvas(); wrap.replaceChild(cv, wrap.querySelector("canvas"));
+    const ch = st.word[st.idx];
+    speak(ch.toLowerCase());                                  // nächsten Buchstaben ansagen
+    setupTrace(cv, ch, onLetterDone);
   }
 }
 
@@ -1343,6 +1400,7 @@ function winRound(){
               : mode === "rhyme" ? "Reim-Held"
               : mode === "memory" ? "Memory-Held"
               : mode === "trace" ? "Mal-Held"
+              : mode === "wordtrace" ? "Schreib-Held"
               : "Lern-Held";
   el.winText.innerHTML = `Super gemacht!<br>Du bist ein<br>${title}! 🌟`;
   showScreen("win");
