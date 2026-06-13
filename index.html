@@ -792,7 +792,10 @@ if ("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged =
 
 /* Aussprache-Korrekturen für Wörter, die die Engine sonst falsch liest */
 function fixPron(text){
-  return text.replace(/\bUSA\b/g, "U-S-A");
+  return text
+    .replace(/\bUSA\b/g, "U-S-A")          // buchstabieren statt "Usa"
+    .replace(/Kroatien/g, "Kroazien")      // korrektes "tsi" statt "ti"
+    .replace(/-Held\b/g, " Held");         // Komposita sauberer trennen ("Flaggen Held")
 }
 
 /* Robustes Sprechen: cancel + kurze Pause, sonst verschluckt iOS Safari die Ansage */
