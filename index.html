@@ -47,6 +47,7 @@
   .screen.active { opacity: 1; pointer-events: auto; }
 
   /* ---------- Menü ---------- */
+  #menu { justify-content: flex-start; overflow-y: auto; padding-top: max(22px, env(safe-area-inset-top)); }
   #menu h1 { font-size: 13cqw; line-height: 1.05; text-align: center; }
   #menu h1 .title {
     background: linear-gradient(90deg,#ff5252,#ff9800,#ffd600,#43d17a,#29b6f6,#b14aff);
@@ -56,7 +57,7 @@
   }
   #menu .sub { font-size: 4.8cqw; margin: 8px 0 4px; opacity: .95; text-align: center;
                text-shadow: 0 2px 0 rgba(0,0,0,.18); }
-  .tiles { display: flex; flex-direction: column; gap: 16px; width: 100%; margin-top: 26px; }
+  .tiles { display: flex; flex-direction: column; gap: 14px; width: 100%; margin: 18px 0; }
   .tile {
     color: #fff; border: none; border-radius: 24px;
     padding: 4.4cqw 5cqw; cursor: pointer; display: flex; align-items: center; gap: 16px;
@@ -66,6 +67,7 @@
   .tile[data-mode="letters"]  { background: linear-gradient(135deg,#ff8a3c 0%,#ff4d6d 100%); }
   .tile[data-mode="counting"] { background: linear-gradient(135deg,#3aa0ff 0%,#8a5bff 100%); }
   .tile[data-mode="flags"]    { background: linear-gradient(135deg,#2fd36b 0%,#0fa89a 100%); }
+  .tile[data-mode="capitals"] { background: linear-gradient(135deg,#19c2e6 0%,#2f72e8 100%); }
   .tile[data-mode="english"]  { background: linear-gradient(135deg,#ff6fae 0%,#9d4edd 100%); }
   .tile:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0,0,0,.22); }
   .tile .ico {
@@ -76,7 +78,8 @@
   }
   .tile[data-mode="counting"] .ico { animation-delay: .4s; }
   .tile[data-mode="flags"] .ico    { animation-delay: .8s; }
-  .tile[data-mode="english"] .ico  { animation-delay: 1.2s; }
+  .tile[data-mode="capitals"] .ico { animation-delay: 1.2s; }
+  .tile[data-mode="english"] .ico  { animation-delay: 1.6s; }
   @keyframes wiggle { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
   .tile .t1 { font-size: 6.4cqw; font-weight: 800; text-shadow: 0 2px 0 rgba(0,0,0,.18); }
   .tile .t2 { font-size: 3.8cqw; opacity: .92; }
@@ -104,6 +107,10 @@
   .ask { font-size: 6.4cqw; font-weight: 800; text-shadow: 0 3px 0 rgba(0,0,0,.18); line-height: 1.05; text-align: center; }
   .ask b { color: #ffe34d; }
   .ask .hint { font-size: 4.2cqw; font-weight: 700; opacity: .8; display: block; margin-top: 2px; }
+  .ask .flagchip { display: inline-block; vertical-align: middle; width: 1.9em; margin: 0 .15em;
+                   border-radius: 3px; overflow: hidden; border: 1.5px solid rgba(255,255,255,.7);
+                   box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .ask .flagchip svg { display: block; width: 100%; height: auto; }
   .speaker { font-size: 28px; background: rgba(255,255,255,.28); border: none; border-radius: 50%;
              width: 50px; height: 50px; flex: none; cursor: pointer; color: #fff;
              box-shadow: 0 4px 0 rgba(0,0,0,.18); }
@@ -192,6 +199,10 @@
       <button class="tile" data-mode="flags">
         <span class="ico">🏳️</span>
         <span class="txt"><span class="t1">Flaggen-Held</span><br><span class="t2">Finde die richtige Flagge!</span></span>
+      </button>
+      <button class="tile" data-mode="capitals">
+        <span class="ico">🗺️</span>
+        <span class="txt"><span class="t1">Hauptstadt-Held</span><br><span class="t2">Welche Stadt gehört zum Land?</span></span>
       </button>
       <button class="tile" data-mode="english">
         <span class="ico">🇬🇧</span>
@@ -342,6 +353,19 @@ const ENGLISH = [
   { e: "🌸", en: "Flower",   de: "Blume" },
   { e: "👟", en: "Shoe",     de: "Schuh" },
   { e: "🎩", en: "Hat",      de: "Hut" },
+];
+
+/* ---------- Hauptstädte für den Hauptstadt-Held (Flagge -> Sehenswürdigkeit) ---------- */
+const CAPITALS = [
+  { id: "de", country: "Deutschland", capital: "Berlin" },
+  { id: "fr", country: "Frankreich",  capital: "Paris" },
+  { id: "it", country: "Italien",     capital: "Rom" },
+  { id: "es", country: "Spanien",     capital: "Madrid" },
+  { id: "en", country: "England",     capital: "London" },
+  { id: "pt", country: "Portugal",    capital: "Lissabon" },
+  { id: "nl", country: "Niederlande", capital: "Amsterdam" },
+  { id: "be", country: "Belgien",     capital: "Brüssel" },
+  { id: "ch", country: "Schweiz",     capital: "Bern" },
 ];
 
 /* ===================================================================
@@ -535,6 +559,122 @@ function mapleLeaf(cx,cy,fill){
 }
 
 /* ===================================================================
+   SEHENSWÜRDIGKEITEN (für den Hauptstadt-Held) — gezeichnete SVG, viewBox 0 0 100 100
+   =================================================================== */
+function r(x,y,w,h,f){ return rect(x,y,w,h,f); }
+function c(cx,cy,rr,f){ return svgCircle(cx,cy,rr,f); }
+function sky(col){ return `<rect width="100" height="100" fill="${col}"/>`; }
+function ground(y,col){ return `<rect y="${y}" width="100" height="${100-y}" fill="${col}"/>`; }
+function landmarkSVG(id){ return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' + scene(id) + '</svg>'; }
+function scene(id){
+  switch (id) {
+    case "fr": { // PARIS — Eiffelturm
+      return sky("#cfe8ff") + ground(82,"#bcd99a")
+        + '<path d="M50 14 L54 34 L62 60 L68 82 L58 82 L52 58 L48 58 L42 82 L32 82 L38 60 L46 34 Z" fill="#6e5836"/>'
+        + r(40,57,20,3.5,"#6e5836") + r(43,43,14,3,"#6e5836") + r(46.5,30,7,2.5,"#6e5836")
+        + '<line x1="50" y1="14" x2="50" y2="7" stroke="#6e5836" stroke-width="2"/>';
+    }
+    case "en": { // LONDON — Big Ben + roter Bus
+      return sky("#cfe8ff") + ground(82,"#9bb37f")
+        + r(43,22,15,60,"#e2d4a6") + r(53,22,5,60,"#cdbd8e")
+        + '<polygon points="43,22 58,22 50.5,8" fill="#6f7f53"/>'
+        + '<line x1="50.5" y1="8" x2="50.5" y2="3" stroke="#6f7f53" stroke-width="1.6"/>'
+        + c(50.5,34,6,"#fff") + ring(50.5,34,6,1.4,"#5a4a2a")
+        + '<line x1="50.5" y1="34" x2="50.5" y2="30" stroke="#333" stroke-width="1.3"/>'
+        + '<line x1="50.5" y1="34" x2="54" y2="35" stroke="#333" stroke-width="1.3"/>'
+        + r(46,46,9,4,"#bfae82") + r(46,54,9,4,"#bfae82")
+        + '<rect x="62" y="65" width="33" height="14" rx="3" fill="#d8342b"/>'
+        + r(65,67,27,5,"#cfe8ff") + c(70,80,3.2,"#222") + c(70,80,1.4,"#888")
+        + c(87,80,3.2,"#222") + c(87,80,1.4,"#888");
+    }
+    case "it": { // ROM — Kolosseum
+      let arches = "";
+      for (let x = 22; x <= 72; x += 11) {
+        arches += `<path d="M${x} 60 L${x} 54 Q${x+3} 49 ${x+6} 54 L${x+6} 60 Z" fill="#8a6a34"/>`;
+        arches += `<path d="M${x} 76 L${x} 69 Q${x+3} 64 ${x+6} 69 L${x+6} 76 Z" fill="#8a6a34"/>`;
+      }
+      return sky("#cfe8ff") + ground(80,"#c7ac74")
+        + '<path d="M16 80 L16 52 Q16 40 50 40 Q84 40 84 52 L84 80 Z" fill="#dcbd82"/>'
+        + r(16,62,68,2,"#c7a564") + arches;
+    }
+    case "de": { // BERLIN — Brandenburger Tor
+      let cols = "";
+      for (let i = 0; i < 6; i++) { const x = 20 + i*10.4; cols += r(x,44,6,30,"#ece2c8") + r(x+4,44,2,30,"#d7caa9"); }
+      return sky("#cfe8ff") + ground(80,"#b8c79a")
+        + r(14,74,72,6,"#cabe9f") + cols + r(14,36,72,8,"#ded3b8")
+        + r(43,26,14,6,"#9a8a64") + '<polygon points="42,26 47,21 52,26" fill="#9a8a64"/>'
+        + c(45,33,2,"#7d6e4c") + c(54,33,2,"#7d6e4c");
+    }
+    case "es": { // MADRID/SPANIEN — Flamenco-Tänzerin
+      return sky("#ffd9a8") + ground(82,"#d99a5a")
+        + '<path d="M47 33 L53 33 L72 80 Q50 73 28 80 Z" fill="#d8203a"/>'
+        + r(46,30,8,7,"#d8203a")
+        + '<path d="M28 80 q5.5 -6 11 0 q5.5 -6 11 0 q5.5 -6 11 0 q5.5 -6 11 0" fill="none" stroke="#fff" stroke-width="2"/>'
+        + c(44,50,2,"#fff") + c(56,57,2,"#fff") + c(40,66,2,"#fff") + c(60,68,2,"#fff") + c(50,42,2,"#fff")
+        + c(50,25,6.5,"#f0c6a0")
+        + '<path d="M43 24 Q50 12 57 24 Q57 17 50 16 Q43 17 43 24 Z" fill="#241410"/>'
+        + c(50,15,3.5,"#241410") + c(57.5,20,2.6,"#d8203a")
+        + '<path d="M47 34 Q33 29 35 17" stroke="#f0c6a0" stroke-width="3.6" fill="none" stroke-linecap="round"/>'
+        + '<path d="M53 34 Q67 29 65 17" stroke="#f0c6a0" stroke-width="3.6" fill="none" stroke-linecap="round"/>'
+        + c(35,16.5,2.6,"#f0c6a0") + c(65,16.5,2.6,"#f0c6a0");
+    }
+    case "pt": { // LISSABON — gelbe Straßenbahn
+      return sky("#cfe8ff") + ground(80,"#9a9aa0")
+        + '<line x1="8" y1="6" x2="92" y2="6" stroke="#888" stroke-width="1"/>'
+        + '<line x1="50" y1="38" x2="50" y2="7" stroke="#555" stroke-width="1.4"/>'
+        + '<rect x="16" y="38" width="68" height="34" rx="6" fill="#f7c600"/>'
+        + r(18,38,64,5,"#fff")
+        + '<rect x="22" y="46" width="38" height="13" rx="2" fill="#cfeefb"/>'
+        + '<line x1="35" y1="46" x2="35" y2="59" stroke="#f7c600" stroke-width="2"/>'
+        + '<line x1="48" y1="46" x2="48" y2="59" stroke="#f7c600" stroke-width="2"/>'
+        + '<rect x="65" y="46" width="13" height="22" rx="2" fill="#cfeefb"/>'
+        + '<rect x="24" y="61" width="11" height="7" rx="1" fill="#fff"/>'
+        + '<text x="29.5" y="66.7" font-size="5.5" font-weight="bold" fill="#333" text-anchor="middle" font-family="Arial">28</text>'
+        + c(80,67,2,"#fff")
+        + c(31,76,4.5,"#333") + c(31,76,1.8,"#888") + c(67,76,4.5,"#333") + c(67,76,1.8,"#888");
+    }
+    case "nl": { // AMSTERDAM — Windmühle + Tulpe
+      const sails = ["45","135","225","315"].map(a =>
+        `<rect x="48" y="13" width="4" height="23" rx="1" fill="#5e3a1e" transform="rotate(${a} 50 36)"/>`).join("");
+      return sky("#cfe8ff") + ground(80,"#8fbf6a")
+        + '<polygon points="40,76 60,76 56,40 44,40" fill="#b5754a"/>'
+        + '<path d="M43 40 Q50 30 57 40 Z" fill="#7a4a28"/>'
+        + r(47,64,6,12,"#7a4a28")
+        + sails + c(50,36,3,"#3a2410")
+        + '<line x1="24" y1="78" x2="24" y2="63" stroke="#2e7d32" stroke-width="2"/>'
+        + '<path d="M20 63 Q20 56 24 59 Q28 56 28 63 Q24 60 20 63 Z" fill="#e0312f"/>'
+        + '<path d="M24 71 Q18 69 19 64 Q24 67 24 71 Z" fill="#2e7d32"/>';
+    }
+    case "be": { // BRÜSSEL — Atomium
+      const pts = [[50,15],[30,31],[70,31],[50,46],[22,55],[78,55],[30,71],[70,71],[50,84]];
+      const links = [[3,0],[3,1],[3,2],[3,4],[3,5],[3,6],[3,7],[3,8],[0,1],[0,2],[1,4],[2,5],[4,6],[5,7],[6,8],[7,8]];
+      let tubes = links.map(([a,b]) =>
+        `<line x1="${pts[a][0]}" y1="${pts[a][1]}" x2="${pts[b][0]}" y2="${pts[b][1]}" stroke="#9aa3ab" stroke-width="2.6"/>`).join("");
+      let spheres = pts.map(p =>
+        c(p[0],p[1],7.5,"#c4cdd5") + ring(p[0],p[1],7.5,1,"#9098a0") + c(p[0]-2,p[1]-2.4,2.6,"#eef3f7")).join("");
+      return sky("#cfe8ff") + ground(90,"#a7adb3") + tubes + spheres;
+    }
+    case "ch": { // BERN — Bär
+      return sky("#cfe8ff") + ground(82,"#bcd99a")
+        + '<ellipse cx="32" cy="60" rx="6.5" ry="10" fill="#7a4f2a"/>'
+        + '<ellipse cx="68" cy="60" rx="6.5" ry="10" fill="#7a4f2a"/>'
+        + '<ellipse cx="50" cy="62" rx="20" ry="17" fill="#8a5a30"/>'
+        + '<ellipse cx="50" cy="66" rx="11" ry="11" fill="#c08a54"/>'
+        + '<ellipse cx="39" cy="78" rx="6.5" ry="4.5" fill="#6e4524"/>'
+        + '<ellipse cx="61" cy="78" rx="6.5" ry="4.5" fill="#6e4524"/>'
+        + c(37,22,6,"#8a5a30") + c(63,22,6,"#8a5a30") + c(37,22,3,"#c08a54") + c(63,22,3,"#c08a54")
+        + c(50,34,15,"#8a5a30")
+        + '<ellipse cx="50" cy="41" rx="8" ry="6" fill="#d8b07a"/>'
+        + '<ellipse cx="50" cy="37" rx="3" ry="2.3" fill="#3a2414"/>'
+        + '<path d="M50 39 Q50 43 47 43 M50 39 Q50 43 53 43" stroke="#3a2414" stroke-width="1.1" fill="none"/>'
+        + c(43,31,2,"#2a1810") + c(57,31,2,"#2a1810")
+        + c(42.5,30.5,0.7,"#fff") + c(56.5,30.5,0.7,"#fff");
+    }
+    default: return sky("#ddd");
+  }
+}
+
+/* ===================================================================
    SOUND (Web Audio API — keine Dateien nötig)
    =================================================================== */
 let audioCtx = null;
@@ -638,6 +778,7 @@ function startGame(m){
   if (m === "counting") queue = shuffle(ANIMAL_COUNT).slice(0, ROUND_LENGTH);
   if (m === "flags")    queue = shuffle(COUNTRIES).slice(0, ROUND_LENGTH);
   if (m === "english")  queue = shuffle(ENGLISH).slice(0, ROUND_LENGTH);
+  if (m === "capitals") queue = shuffle(CAPITALS).slice(0, ROUND_LENGTH);
   buildStars();
   showScreen("game");
   nextQuestion();
@@ -665,6 +806,7 @@ function nextQuestion(){
   if (mode === "counting") renderCounting(current);
   if (mode === "flags")    renderFlags(current);
   if (mode === "english")  renderEnglish(current);
+  if (mode === "capitals") renderCapitals(current);
   setTimeout(askAloud, 350);
 }
 
@@ -673,6 +815,7 @@ function askAloud(){
   if (mode === "counting") speak("Wie viele " + current.plural + "?");
   if (mode === "flags")    speak("Finde " + current.name);
   if (mode === "english")  speakEN("Where is the " + current.en.toLowerCase() + "?");
+  if (mode === "capitals") speak("Finde die Hauptstadt von " + current.country);
 }
 
 /* ---------- Buchstaben-Detektiv ---------- */
@@ -795,6 +938,27 @@ function renderEnglish(item){
   el.content.appendChild(choices);
 }
 
+/* ---------- Hauptstadt-Held ---------- */
+function renderCapitals(item){
+  el.ask.innerHTML = `Finde die Hauptstadt von <span class="flagchip">${flagSVG(item.id)}</span> <b>${item.country}</b>`;
+  const distractors = shuffle(CAPITALS.filter(cc => cc.id !== item.id)).slice(0, 2);
+  const options = shuffle([item, ...distractors]);
+
+  const wrap = document.createElement("div");
+  wrap.className = "cards";
+  options.forEach(o => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = landmarkSVG(o.id) + `<span class="label">${o.capital}</span>`;
+    card.addEventListener("click", () => {
+      handleAnswer(o.id === item.id, card,
+        () => speak("Richtig! Die Hauptstadt von " + item.country + " ist " + item.capital + "!"));
+    });
+    wrap.appendChild(card);
+  });
+  el.content.appendChild(wrap);
+}
+
 /* ---------- gemeinsame Antwort-Logik ---------- */
 function handleAnswer(isCorrect, btn, praiseFn){
   if (locked) return;
@@ -819,7 +983,9 @@ function winRound(){
   const title = mode === "letters" ? "Buchstaben-Held"
               : mode === "counting" ? "Zähl-Held"
               : mode === "flags" ? "Flaggen-Held"
-              : "Englisch-Held";
+              : mode === "capitals" ? "Hauptstadt-Held"
+              : mode === "english" ? "Englisch-Held"
+              : "Lern-Held";
   el.winText.innerHTML = `Super gemacht!<br>Du bist ein<br>${title}! 🌟`;
   showScreen("win");
   playCheer();
