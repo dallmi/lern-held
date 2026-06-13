@@ -767,29 +767,49 @@ function playBlip(){ tone(880, 0, 0.10, "triangle", 0.20); } // beim Tier-Antipp
    SPRACHE (Web Speech API — Stimme des Geräts, offline)
    =================================================================== */
 let germanVoice = null, englishVoice = null;
+/* Beste Stimme wählen: "Compact"-Varianten meiden, bekannte gute Stimmen bevorzugen */
+function chooseVoice(list, preferred){
+  if (!list.length) return null;
+  const noCompact = list.filter(v => !/compact/i.test(v.name));
+  const pool = noCompact.length ? noCompact : list;
+  for (const n of preferred){ const m = pool.find(v => v.name.indexOf(n) !== -1); if (m) return m; }
+  const enhanced = pool.find(v => /(enhanced|premium|natural|neural|siri)/i.test(v.name));
+  return enhanced || pool[0];
+}
 function pickVoice(){
   if (!("speechSynthesis" in window)) return;
   const voices = speechSynthesis.getVoices();
-  germanVoice  = voices.find(v => /de(-|_)/i.test(v.lang)) || voices.find(v => /^de/i.test(v.lang)) || null;
-  englishVoice = voices.find(v => /en(-|_)/i.test(v.lang)) || voices.find(v => /^en/i.test(v.lang)) || null;
+  const deDE = voices.filter(v => /^de[-_]de/i.test(v.lang));
+  const deAny = voices.filter(v => /^de/i.test(v.lang));
+  germanVoice = chooseVoice(deDE.length ? deDE : deAny, ["Anna","Helena","Petra","Markus","Viktor","Google"]);
+  const enUSGB = voices.filter(v => /^en[-_](us|gb)/i.test(v.lang));
+  const enAny = voices.filter(v => /^en/i.test(v.lang));
+  englishVoice = chooseVoice(enUSGB.length ? enUSGB : enAny, ["Samantha","Daniel","Karen","Moira","Google"]);
 }
 if ("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
-function speak(text){
-  if (muted || !("speechSynthesis" in window)) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "de-DE"; if (germanVoice) u.voice = germanVoice;
-  u.rate = 0.92; u.pitch = 1.15; u.volume = 1;
-  speechSynthesis.speak(u);
+
+/* Aussprache-Korrekturen für Wörter, die die Engine sonst falsch liest */
+function fixPron(text){
+  return text.replace(/\bUSA\b/g, "U-S-A");
 }
-function speakEN(text){
+
+/* Robustes Sprechen: cancel + kurze Pause, sonst verschluckt iOS Safari die Ansage */
+let speakTimer = null;
+function doSpeak(text, lang, voice, rate, pitch){
   if (muted || !("speechSynthesis" in window)) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "en-US"; if (englishVoice) u.voice = englishVoice;
-  u.rate = 0.85; u.pitch = 1.1; u.volume = 1;
-  speechSynthesis.speak(u);
+  const s = window.speechSynthesis;
+  s.cancel();
+  clearTimeout(speakTimer);
+  speakTimer = setTimeout(() => {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang; if (voice) u.voice = voice;
+    u.rate = rate; u.pitch = pitch; u.volume = 1;
+    try { s.resume(); } catch (e) {}
+    s.speak(u);
+  }, 120);
 }
+function speak(text){ doSpeak(fixPron(text), "de-DE", germanVoice, 0.94, 1.1); }
+function speakEN(text){ doSpeak(text, "en-US", englishVoice, 0.85, 1.05); }
 
 /* ===================================================================
    HILFSFUNKTIONEN
@@ -1141,7 +1161,7 @@ function handleAnswer(isCorrect, btn, praiseFn){
     [...btn.parentElement.children].forEach(c => { if (c !== btn) c.classList.add("dim"); });
     el.mascot.classList.remove("cheer"); void el.mascot.offsetWidth; el.mascot.classList.add("cheer");
     playCheer(); confettiBurst();
-    setTimeout(() => { speechSynthesis && speechSynthesis.cancel(); praiseFn(); }, 120);
+    praiseFn();
     setTimeout(nextQuestion, 1900);
   } else {
     btn.classList.remove("wrong"); void btn.offsetWidth; btn.classList.add("wrong");
