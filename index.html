@@ -293,6 +293,17 @@ const COUNTRIES = [
   { id: "jp", name: "Japan" },
   { id: "be", name: "Belgien" },
   { id: "ch", name: "Schweiz" },
+  { id: "at", name: "Österreich" },
+  { id: "pl", name: "Polen" },
+  { id: "se", name: "Schweden" },
+  { id: "no", name: "Norwegen" },
+  { id: "dk", name: "Dänemark" },
+  { id: "fi", name: "Finnland" },
+  { id: "gr", name: "Griechenland" },
+  { id: "ie", name: "Irland" },
+  { id: "cz", name: "Tschechien" },
+  { id: "hu", name: "Ungarn" },
+  { id: "tr", name: "Türkei" },
 ];
 
 /* ---------- Englische Wörter für den Englisch-Held (Emoji, Englisch, Deutsch) ---------- */
@@ -406,6 +417,42 @@ function flagSVG(id){
     }
     case "ch":
       body = rect(15,0,60,60,"#D52B1E") + rect(27,24,36,12,"#fff") + rect(39,12,12,36,"#fff"); break;
+
+    case "at": // Österreich: rot / weiß / rot
+      body = rect(0,0,90,20,"#ED2939") + rect(0,20,90,20,"#fff") + rect(0,40,90,20,"#ED2939"); break;
+    case "pl": // Polen: weiß / rot
+      body = rect(0,0,90,30,"#fff") + rect(0,30,90,30,"#DC143C"); break;
+    case "hu": // Ungarn: rot / weiß / grün
+      body = rect(0,0,90,20,"#CD2A3E") + rect(0,20,90,20,"#fff") + rect(0,40,90,20,"#436F4D"); break;
+    case "ie": // Irland: grün / weiß / orange senkrecht
+      body = rect(0,0,30,60,"#169B62") + rect(30,0,30,60,"#fff") + rect(60,0,30,60,"#FF883E"); break;
+    case "se": // Schweden: blau mit gelbem Skandinavienkreuz
+      body = rect(0,0,90,60,"#006AA7") + rect(27,0,12,60,"#FECC00") + rect(0,24,90,12,"#FECC00"); break;
+    case "dk": // Dänemark: rot mit weißem Kreuz
+      body = rect(0,0,90,60,"#C8102E") + rect(27,0,12,60,"#fff") + rect(0,24,90,12,"#fff"); break;
+    case "fi": // Finnland: weiß mit blauem Kreuz
+      body = rect(0,0,90,60,"#fff") + rect(27,0,12,60,"#003580") + rect(0,24,90,12,"#003580"); break;
+    case "no": // Norwegen: rot mit weiß-blauem Kreuz
+      body = rect(0,0,90,60,"#BA0C2F")
+           + rect(24,0,18,60,"#fff") + rect(0,21,90,18,"#fff")
+           + rect(28.5,0,9,60,"#00205B") + rect(0,25.5,90,9,"#00205B"); break;
+    case "cz": // Tschechien: weiß / rot + blaues Dreieck
+      body = rect(0,0,90,30,"#fff") + rect(0,30,90,30,"#D7141A")
+           + '<polygon points="0,0 45,30 0,60" fill="#11457E"/>'; break;
+    case "gr": { // Griechenland: 9 Streifen + Kreuz im Eck
+      const sh = 60/9;
+      for (let i = 0; i < 9; i++) body += rect(0, i*sh, 90, sh, i % 2 === 0 ? "#0D5EAF" : "#fff");
+      const cs = sh*5;
+      body += rect(0,0,cs,cs,"#0D5EAF")
+            + rect(cs/2 - sh/2, 0, sh, cs, "#fff")
+            + rect(0, cs/2 - sh/2, cs, sh, "#fff");
+      break;
+    }
+    case "tr": // Türkei: rot mit Halbmond + Stern
+      body = rect(0,0,90,60,"#E30A17")
+           + svgCircle(33,30,12,"#fff") + svgCircle(36.5,30,9.5,"#E30A17")
+           + star5(49,30,6,"#fff"); break;
+
     default:
       body = rect(0,0,90,60,"#ccc");
   }
@@ -424,6 +471,15 @@ function sun(cx,cy,rInner,rOuter,fill){
     rays += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${fill}" stroke-width="1.4"/>`;
   }
   return rays + svgCircle(cx,cy,rInner,fill);
+}
+function star5(cx,cy,r,fill){
+  let pts = [];
+  for (let i = 0; i < 10; i++){
+    const rad = (i % 2 === 0) ? r : r*0.42;
+    const a = -Math.PI/2 + i*Math.PI/5;
+    pts.push((cx + Math.cos(a)*rad).toFixed(1) + "," + (cy + Math.sin(a)*rad).toFixed(1));
+  }
+  return `<polygon points="${pts.join(' ')}" fill="${fill}"/>`;
 }
 
 /* ===================================================================
