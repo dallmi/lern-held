@@ -77,6 +77,8 @@
   .tile[data-mode="addition"] { background: linear-gradient(135deg,#36d1dc 0%,#2b86c5 100%); }
   .tile[data-mode="pattern"]  { background: linear-gradient(135deg,#f7971e 0%,#ffd200 100%); }
   .tile[data-mode="sounds"]   { background: linear-gradient(135deg,#f857a6 0%,#ff5858 100%); }
+  .tile[data-mode="subtraction"] { background: linear-gradient(135deg,#fa709a 0%,#fbbf57 100%); }
+  .tile[data-mode="reading"]  { background: linear-gradient(135deg,#7367f0 0%,#ce9ffc 100%); }
   .tile:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0,0,0,.22); }
   .tile .ico {
     font-size: 10cqw; flex: none; width: 17cqw; height: 17cqw; max-width: 84px; max-height: 84px;
@@ -95,6 +97,8 @@
   .tile[data-mode="addition"] .ico { animation-delay: 2.2s; }
   .tile[data-mode="pattern"] .ico  { animation-delay: 2.4s; }
   .tile[data-mode="sounds"] .ico   { animation-delay: 2.6s; }
+  .tile[data-mode="subtraction"] .ico { animation-delay: 2.8s; }
+  .tile[data-mode="reading"] .ico  { animation-delay: 3s; }
   .tile[data-mode="memory"] .ico   { animation-delay: 2s; }
   @keyframes wiggle { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
   .tile .t1 { font-size: 6.4cqw; font-weight: 800; text-shadow: 0 2px 0 rgba(0,0,0,.18); }
@@ -229,6 +233,54 @@
   .patternrow .pq { background: #fff; color: #c9a100; border-radius: 16px; font-weight: 800;
                     box-shadow: inset 0 0 0 4px #ffd84d, 0 6px 0 rgba(0,0,0,.16); }
 
+  /* Minus-Held (weggenommene Objekte) */
+  .summe .grp.wide { max-width: 84cqw; }
+  .mobj { font-size: clamp(16px, 8cqw, 46px); line-height: 1; cursor: pointer; position: relative;
+          transition: transform .12s, filter .12s; }
+  .mobj:active { transform: scale(1.18); }
+  .mobj.counted { filter: drop-shadow(0 0 8px #ffd84d); transform: scale(1.1); }
+  .mobj.gone { opacity: .4; filter: grayscale(.7); cursor: default; }
+  .mobj.gone::after { content: "✖"; position: absolute; inset: 0; display: flex;
+                      align-items: center; justify-content: center; color: #e53935;
+                      font-size: 75%; font-weight: 900; text-shadow: 0 1px 1px rgba(255,255,255,.6); }
+
+  /* Erstes Lesen (großes Wort) */
+  .readword { font-size: 17cqw; font-weight: 800; letter-spacing: 0.6cqw; line-height: 1.1;
+              text-align: center; text-shadow: 0 4px 0 rgba(0,0,0,.18); margin: 1cqh 0 2cqh; }
+
+  /* Belohnungs-Zoo: Knopf im Menü */
+  .zoo-link { font-family: inherit; border: none; cursor: pointer; width: 100%;
+              background: linear-gradient(135deg,#ffcb05 0%,#ff9800 100%); color: #1c3b1a;
+              font-size: 5.4cqw; font-weight: 800; padding: 3cqw 5cqw; border-radius: 20px;
+              box-shadow: 0 6px 0 rgba(0,0,0,.22), 0 9px 16px rgba(0,0,0,.2);
+              transition: transform .08s, box-shadow .08s; }
+  .zoo-link:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.22); }
+
+  /* Belohnungs-Zoo: Sammel-Screen */
+  #zoo { justify-content: flex-start; overflow-y: auto;
+         padding-top: max(18px, env(safe-area-inset-top)); padding-bottom: 18px; }
+  .zootitle { text-align: center; font-size: 8.5cqw; margin: 4px 0 2px; text-shadow: 0 4px 0 rgba(0,0,0,.18); }
+  .zoosub { text-align: center; font-size: 4.6cqw; font-weight: 800; color: #1c3b1a;
+            background: #ffd84d; border-radius: 999px; padding: 1.5cqw 5cqw; margin: 2px 0 10px;
+            box-shadow: 0 4px 0 rgba(0,0,0,.16); }
+  .zoogrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; width: 100%; padding: 4px 2px; }
+  .zoocell { aspect-ratio: 1; background: rgba(255,255,255,.92); border-radius: 18px;
+             display: flex; align-items: center; justify-content: center; font-size: 12cqw;
+             position: relative; box-shadow: 0 5px 0 rgba(0,0,0,.14); }
+  .zoocell.locked { background: rgba(255,255,255,.25); color: rgba(255,255,255,.7);
+                    filter: grayscale(1); font-size: 9cqw; box-shadow: none; }
+  .zoocell.fresh { animation: pop .6s ease; box-shadow: 0 0 0 4px #ffd84d, 0 5px 0 rgba(0,0,0,.14); }
+  .zoobadge { position: absolute; right: 4px; bottom: 3px; font-size: 3.4cqw; font-weight: 800;
+              color: #1c3b1a; background: #ffd84d; border-radius: 999px; padding: 0 5px; }
+  .zoo-back { margin-top: 14px; }
+
+  /* Belohnung auf dem Gewinn-Screen */
+  #reward { display: none; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 18px; }
+  #reward.show { display: flex; }
+  #reward .rlabel { font-size: 4.6cqw; font-weight: 800; text-shadow: 0 2px 0 rgba(0,0,0,.18); }
+  #reward .ranimal { font-size: 22cqw; line-height: 1; animation: pop .6s ease;
+                     filter: drop-shadow(0 6px 5px rgba(0,0,0,.28)); }
+
   /* Flaggen-Karten */
   .cards { display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 2px 4px 6px; flex: 1; justify-content: center; }
   .card { background: #fff; border-radius: 18px; padding: 7px; cursor: pointer;
@@ -316,6 +368,14 @@
         <span class="ico">🐮</span>
         <span class="txt"><span class="t1">Tier-Geräusche</span><br><span class="t2">Welches Tier macht das?</span></span>
       </button>
+      <button class="tile" data-mode="subtraction">
+        <span class="ico">➖</span>
+        <span class="txt"><span class="t1">Minus-Held</span><br><span class="t2">Wie viele bleiben übrig?</span></span>
+      </button>
+      <button class="tile" data-mode="reading">
+        <span class="ico">📖</span>
+        <span class="txt"><span class="t1">Lese-Held</span><br><span class="t2">Lies das Wort – finde das Bild!</span></span>
+      </button>
       <button class="tile" data-mode="memory">
         <span class="ico">🃏</span>
         <span class="txt"><span class="t1">Memory</span><br><span class="t2">Finde die Tier-Paare!</span></span>
@@ -326,6 +386,7 @@
       <div class="dots" id="pagerDots"></div>
       <button class="arrow" id="pagerNext" aria-label="Nächste Seite">›</button>
     </div>
+    <button class="zoo-link" id="zooBtn">🦁 Mein Zoo 🐯</button>
   </section>
 
   <!-- Spiel -->
@@ -347,10 +408,26 @@
   <section id="win" class="screen">
     <div class="trophy">🏆</div>
     <h2 id="winText">Super gemacht!<br>Du bist ein<br>Tier-Held! 🌟</h2>
+    <div id="reward">
+      <span class="rlabel" id="rewardLabel"></span>
+      <span class="ranimal" id="rewardAnimal"></span>
+    </div>
     <div class="win-btns">
       <button class="big-btn" id="againBtn">Nochmal spielen!</button>
+      <button class="ghost-btn" id="zooWinBtn">🦁 Meinen Zoo ansehen</button>
       <button class="ghost-btn" id="menuBtn">🏠 Anderes Spiel</button>
     </div>
+  </section>
+
+  <!-- Belohnungs-Zoo -->
+  <section id="zoo" class="screen">
+    <div class="topbar">
+      <button class="home" id="zooHome" aria-label="Zurück zum Menü">🏠</button>
+      <div class="spacer"></div>
+    </div>
+    <h2 class="zootitle">🦁 Mein Zoo 🐯</h2>
+    <div class="zoosub" id="zooProgress">0 / 0</div>
+    <div class="zoogrid" id="zooGrid"></div>
   </section>
 
 </div>
@@ -994,7 +1071,7 @@ function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function randInt(min, max){ return Math.floor(Math.random()*(max-min+1)) + min; }
 
 const el = {
-  screens: { menu: byId("menu"), game: byId("game"), win: byId("win") },
+  screens: { menu: byId("menu"), game: byId("game"), win: byId("win"), zoo: byId("zoo") },
   stars: byId("stars"),
   ask: byId("ask"),
   content: byId("content"),
@@ -1007,6 +1084,14 @@ const el = {
   pagerDots: byId("pagerDots"),
   pagerPrev: byId("pagerPrev"),
   pagerNext: byId("pagerNext"),
+  reward: byId("reward"),
+  rewardLabel: byId("rewardLabel"),
+  rewardAnimal: byId("rewardAnimal"),
+  zooBtn: byId("zooBtn"),
+  zooWinBtn: byId("zooWinBtn"),
+  zooHome: byId("zooHome"),
+  zooGrid: byId("zooGrid"),
+  zooProgress: byId("zooProgress"),
 };
 el.mascot.innerHTML = lionMascot();
 updateSpeaker();
@@ -1057,6 +1142,7 @@ let score = 0;       // gesammelte Sterne
 let current = null;  // aktuelle Aufgabe
 let locked = false;  // sperrt Eingaben während der Jubel-Animation
 let readSeq = 0;     // Token für die Vorlese-Sequenz (Hauptstadt-Held)
+let lastSticker = null; // zuletzt gewonnenes Zoo-Tier (für "Zoo ansehen" im Gewinn-Screen)
 
 function startGame(m){
   initAudio();
@@ -1080,8 +1166,10 @@ function startGame(m){
   if (m === "english")  queue = shuffle(ENGLISH).slice(0, ROUND_LENGTH);
   if (m === "capitals") queue = shuffle(CAPITALS).slice(0, ROUND_LENGTH);
   if (m === "addition") queue = makeAdditionRound(ROUND_LENGTH);
+  if (m === "subtraction") queue = makeSubtractionRound(ROUND_LENGTH);
   if (m === "pattern")  queue = makePatternRound(ROUND_LENGTH);
   if (m === "sounds")   queue = shuffle(ANIMAL_SOUNDS).slice(0, ROUND_LENGTH);
+  if (m === "reading")  queue = shuffle(READING).slice(0, ROUND_LENGTH);
   buildStars(queue.length);
   showScreen("game");
   nextQuestion();
@@ -1117,8 +1205,10 @@ function nextQuestion(){
   if (mode === "wordtrace") renderWord(current);
   if (mode === "shapes")    renderShapes(current);
   if (mode === "addition")  renderAddition(current);
+  if (mode === "subtraction") renderSubtraction(current);
   if (mode === "pattern")   renderPattern(current);
   if (mode === "sounds")    renderSounds(current);
+  if (mode === "reading")   renderReading(current);
   setTimeout(askAloud, 350);
 }
 
@@ -1134,8 +1224,10 @@ function askAloud(){
   if (mode === "wordtrace") speak("Schreibe " + nice(current) + "!");
   if (mode === "shapes")    speakEN(current.type === "color" ? "Find the " + current.target.name + " one!" : "Find the " + current.target + "!");
   if (mode === "addition")  speak("Wie viel ist " + current.a + " plus " + current.b + "?");
+  if (mode === "subtraction") speak(current.a + " minus " + current.b + ". Wie viele bleiben übrig?");
   if (mode === "pattern")   speak("Wie geht es weiter?");
   if (mode === "sounds")    speak(current.sound + "! Welches Tier macht das?");
+  if (mode === "reading")   speak("Welches Bild passt zu dem Wort?");
 }
 
 /* ---------- Buchstaben-Detektiv ---------- */
@@ -1643,6 +1735,121 @@ function renderSounds(item){
   el.content.appendChild(choices);
 }
 
+/* ---------- Minus-Held (erstes Subtrahieren) ---------- */
+function makeSubtractionRound(n){
+  const q = [];
+  const used = [];
+  for (let i = 0; i < n; i++){
+    const maxA = Math.min(4 + i, 10);                    // Minuend wächst 4->10
+    const minA = Math.min(3 + i, maxA);
+    let a, tries = 0;
+    do { a = randInt(minA, maxA); tries++; } while (used.includes(a) && tries < 6);
+    used.push(a);
+    const b = randInt(1, a - 1);                         // Ergebnis bleibt >= 1
+    q.push({ a, b, result: a - b, emoji: pick(ADD_OBJECTS) });
+  }
+  return q;
+}
+function renderSubtraction(item){
+  el.ask.innerHTML = `Wie viel ist <b>${item.a} − ${item.b}</b>?`;
+  const row = document.createElement("div"); row.className = "summe";
+  const grp = document.createElement("div"); grp.className = "grp wide";
+  const remain = item.a - item.b;
+  let counted = 0;
+  for (let i = 0; i < item.a; i++){
+    const s = document.createElement("span");
+    const gone = i >= remain;
+    s.className = "mobj" + (gone ? " gone" : "");
+    s.textContent = item.emoji;
+    if (!gone){
+      s.addEventListener("click", () => {
+        if (s.classList.contains("counted")) return;
+        s.classList.add("counted"); counted++; playBlip(); speak(String(counted));
+      });
+    }
+    grp.appendChild(s);
+  }
+  row.appendChild(grp);
+  el.content.appendChild(row);
+
+  const choices = document.createElement("div"); choices.className = "choices";
+  numberChoices(item.result, item.a).forEach(num => {
+    const b = document.createElement("button");
+    b.className = "choice big"; b.textContent = String(num);
+    b.addEventListener("click", () => {
+      handleAnswer(num === item.result, b,
+        (done) => speak("Richtig! " + item.a + " minus " + item.b + " ist " + item.result + "!", done));
+    });
+    choices.appendChild(b);
+  });
+  el.content.appendChild(choices);
+}
+
+/* ---------- Lese-Held (Wort lesen, Bild finden) ---------- */
+const READING = [
+  { w: "HUND",  e: "🐶" }, { w: "KATZE", e: "🐱" }, { w: "FISCH", e: "🐟" },
+  { w: "KUH",   e: "🐮" }, { w: "VOGEL", e: "🐦" }, { w: "BÄR",   e: "🐻" },
+  { w: "AUTO",  e: "🚗" }, { w: "BALL",  e: "⚽" }, { w: "HAUS",  e: "🏠" },
+  { w: "BAUM",  e: "🌳" }, { w: "BLUME", e: "🌸" }, { w: "SONNE", e: "☀️" },
+  { w: "MOND",  e: "🌙" }, { w: "STERN", e: "⭐" }, { w: "BUCH",  e: "📖" },
+  { w: "APFEL", e: "🍎" }, { w: "BANANE",e: "🍌" }, { w: "SCHUH", e: "👟" },
+];
+function renderReading(item){
+  el.ask.innerHTML = `Welches Bild passt?`;
+  const stage = document.createElement("div"); stage.className = "stage";
+  stage.innerHTML = `<div class="readword">${item.w}</div>`;
+  el.content.appendChild(stage);
+
+  const distractors = shuffle(READING.filter(x => x.w !== item.w)).slice(0, 2);
+  const options = shuffle([item, ...distractors]);
+  const choices = document.createElement("div"); choices.className = "choices";
+  options.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "choice big emoji"; b.textContent = o.e;
+    b.addEventListener("click", () => {
+      handleAnswer(o.w === item.w, b,
+        (done) => speak("Richtig! Das ist " + nice(item.w) + "!", done));
+    });
+    choices.appendChild(b);
+  });
+  el.content.appendChild(choices);
+}
+
+/* ---------- Belohnungs-Zoo (Sticker-Sammlung, in localStorage) ---------- */
+const ZOO_ANIMALS = [
+  "🦁","🐯","🐘","🦒","🦓","🐆","🦏","🦛","🐊","🐵",
+  "🐻","🦊","🐺","🐼","🐨","🦘","🦔","🦥","🦦","🦫",
+  "🐧","🦜","🦩","🐢","🐙","🦋","🐝","🐬",
+];
+function loadZoo(){ try { return JSON.parse(localStorage.getItem("lernheld-zoo")) || {}; } catch (e) { return {}; } }
+function saveZoo(z){ try { localStorage.setItem("lernheld-zoo", JSON.stringify(z)); } catch (e) {} }
+function awardSticker(){
+  const zoo = loadZoo();
+  const fehlend = ZOO_ANIMALS.filter(a => !zoo[a]);
+  const tier = fehlend.length ? pick(fehlend) : pick(ZOO_ANIMALS);
+  zoo[tier] = (zoo[tier] || 0) + 1;
+  saveZoo(zoo);
+  return { animal: tier, isNew: fehlend.length > 0 };
+}
+function showZoo(freshAnimal){
+  const zoo = loadZoo();
+  const collected = ZOO_ANIMALS.filter(a => zoo[a]).length;
+  el.zooProgress.textContent = collected + " / " + ZOO_ANIMALS.length + " Tiere";
+  el.zooGrid.innerHTML = "";
+  ZOO_ANIMALS.forEach(a => {
+    const cell = document.createElement("div");
+    const has = !!zoo[a];
+    cell.className = "zoocell" + (has ? "" : " locked") + (a === freshAnimal ? " fresh" : "");
+    cell.textContent = has ? a : "❓";
+    if (has && zoo[a] > 1){
+      const badge = document.createElement("span"); badge.className = "zoobadge"; badge.textContent = "×" + zoo[a];
+      cell.appendChild(badge);
+    }
+    el.zooGrid.appendChild(cell);
+  });
+  showScreen("zoo");
+}
+
 /* ---------- gemeinsame Antwort-Logik ---------- */
 function handleAnswer(isCorrect, btn, praiseFn){
   if (locked) return;
@@ -1678,10 +1885,19 @@ function winRound(){
               : mode === "wordtrace" ? "Schreib-Held"
               : mode === "shapes" ? "Farben-Held"
               : mode === "addition" ? "Rechen-Held"
+              : mode === "subtraction" ? "Minus-Held"
               : mode === "pattern" ? "Muster-Held"
               : mode === "sounds" ? "Geräusche-Held"
+              : mode === "reading" ? "Lese-Held"
               : "Lern-Held";
   el.winText.innerHTML = `Super gemacht!<br>Du bist ein<br>${title}! 🌟`;
+
+  // Belohnung: ein Tier für den Zoo
+  lastSticker = awardSticker();
+  el.rewardLabel.textContent = lastSticker.isNew ? "Neues Tier für deinen Zoo!" : "Für deinen Zoo!";
+  el.rewardAnimal.textContent = lastSticker.animal;
+  el.reward.classList.add("show");
+
   showScreen("win");
   playCheer();
   setTimeout(() => { confettiBurst(); confettiBurst(); }, 150);
@@ -1746,6 +1962,9 @@ el.speakBtn.addEventListener("click", () => {
 el.homeBtn.addEventListener("click", () => { cancelRead(); speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
 el.againBtn.addEventListener("click", () => { initAudio(); primeSpeech(); startGame(mode); });
 el.menuBtn.addEventListener("click", () => { cancelRead(); speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
+el.zooBtn.addEventListener("click", () => { initAudio(); showZoo(); });
+el.zooWinBtn.addEventListener("click", () => { initAudio(); speechSynthesis && speechSynthesis.cancel(); showZoo(lastSticker && lastSticker.animal); });
+el.zooHome.addEventListener("click", () => { showScreen("menu"); });
 
 window.addEventListener("load", () => setTimeout(pickVoice, 200));
 </script>
