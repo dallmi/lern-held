@@ -575,6 +575,11 @@ const CAPITALS = [
   { id: "ie", country: "Irland",      capital: "Dublin" },
   { id: "no", country: "Norwegen",    capital: "Oslo" },
   { id: "se", country: "Schweden",    capital: "Stockholm" },
+  { id: "fi", country: "Finnland",    capital: "Helsinki" },
+  { id: "hu", country: "Ungarn",      capital: "Budapest" },
+  { id: "cz", country: "Tschechien",  capital: "Prag" },
+  { id: "pl", country: "Polen",       capital: "Warschau" },
+  { id: "hr", country: "Kroatien",    capital: "Zagreb" },
 ];
 
 /* ---------- Reim-Paare für den Reim-Held (Wort -> Reimwort, beide als Emoji) ---------- */
@@ -1050,6 +1055,94 @@ function scene(id){
         + c(81,33,1.5,"#fff")                                                               // Auge
         + '<path d="M42 56 q4 -4 8 0 q4 -4 8 0" stroke="#fff" stroke-width="1.3" fill="none"/>'  // Kurbits
         + c(46,62,1.3,"#ffd54f") + c(54,62,1.3,"#ffd54f") + c(50,65,1.2,"#90caf9");
+    }
+    case "fi": { // HELSINKI — Dom (weiße Kathedrale, grüne Kuppeln)
+      const G = "#5aa888";
+      let cols = "";
+      for (let i=0;i<4;i++){ const x=33+i*9; cols += r(x,52,4,16,"#e6eaee"); }
+      const smallDome = (cx) => r(cx-3,40,6,4,"#eef1f4") + `<path d="M${cx-3} 40 Q${cx} 33 ${cx+3} 40 Z" fill="${G}"/>` + `<line x1="${cx}" y1="33" x2="${cx}" y2="30" stroke="${G}" stroke-width="1"/>`;
+      return sky("#cfe8ff") + ground(80,"#cdd3da")
+        + r(18,72,64,6,"#e6e8eb") + r(24,68,52,4,"#d8dce0")          // Stufen
+        + r(30,48,40,22,"#f5f7f9") + cols                            // weißer Körper + Säulen
+        + '<polygon points="30,48 70,48 50,39" fill="#f8fafb"/>'      // Giebel
+        + smallDome(34) + smallDome(66)                              // kleine Kuppeln
+        + r(43,30,14,12,"#eef1f4")                                    // Tambour
+        + `<path d="M43 30 Q50 14 57 30 Z" fill="${G}"/>`             // große Kuppel
+        + r(48.5,11,3,5,"#eef1f4") + c(50,11,2,G)                     // Laterne
+        + '<line x1="50" y1="9" x2="50" y2="5" stroke="#caa54a" stroke-width="1.2"/>'
+        + '<line x1="48" y1="6.5" x2="52" y2="6.5" stroke="#caa54a" stroke-width="1.2"/>';
+    }
+    case "hu": { // BUDAPEST — Kettenbrücke
+      const STONE = "#cabfa6";
+      const tower = (x) => r(x-6,28,12,32,STONE) + r(x-7,26,14,3,"#b8ad94")
+        + `<path d="M${x-3} 60 L${x-3} 42 Q${x} 38 ${x+3} 42 L${x+3} 60 Z" fill="#cfe8ff"/>` + r(x-1,30,2,8,"#b8ad94");
+      let susp = "";
+      for (let x=12;x<=88;x+=6){
+        let cy;
+        if (x<26) cy = 58 - (x-10)/16*28;
+        else if (x>70) cy = 30 + (x-70)/18*28;
+        else { const t=(x-48)/22; cy = 30 + (1-t*t)*20; }
+        susp += `<line x1="${x}" y1="${cy.toFixed(1)}" x2="${x}" y2="60" stroke="#8a8270" stroke-width="0.8"/>`;
+      }
+      return sky("#cfe8ff") + ground(70,"#6ea9d6")
+        + r(8,60,84,4,"#9a9088")                                      // Fahrbahn
+        + '<path d="M10 58 Q18 36 26 30" stroke="#7d7563" stroke-width="1.6" fill="none"/>'
+        + '<path d="M26 30 Q48 54 70 30" stroke="#7d7563" stroke-width="1.6" fill="none"/>'
+        + '<path d="M70 30 Q82 36 90 58" stroke="#7d7563" stroke-width="1.6" fill="none"/>'
+        + susp + tower(26) + tower(70);
+    }
+    case "cz": { // PRAG — gotische Kathedrale (zwei Spitztürme)
+      const STONE="#8a8f96", DARK="#6b7178";
+      const pinnacle=(x)=> `<polygon points="${x-6},24 ${x+6},24 ${x},6" fill="${DARK}"/>` + `<line x1="${x}" y1="6" x2="${x}" y2="2" stroke="#caa54a" stroke-width="1"/>`;
+      return sky("#cfe8ff") + ground(80,"#9fb487")
+        + r(34,44,32,36,STONE)                                        // Mittelschiff
+        + r(34,24,12,56,"#7e848c") + r(54,24,12,56,"#7e848c")          // zwei Türme
+        + pinnacle(40) + pinnacle(60)                                  // Spitzen
+        + c(50,40,6,"#cfe8ff") + ring(50,40,6,1.4,DARK)                // Fensterrose
+        + '<path d="M44 40 L56 40 M50 34 L50 46 M45.5 35.5 L54.5 44.5 M54.5 35.5 L45.5 44.5" stroke="'+DARK+'" stroke-width="0.8"/>'
+        + '<path d="M46 80 L46 64 Q50 58 54 64 L54 80 Z" fill="#5b6168"/>'  // Portal
+        + '<path d="M37 40 L37 32 Q40 28 43 32 L43 40 Z" fill="#cfe8ff"/>'  // Turmfenster
+        + '<path d="M57 40 L57 32 Q60 28 63 32 L63 40 Z" fill="#cfe8ff"/>';
+    }
+    case "pl": { // WARSCHAU — Meerjungfrau (Syrenka)
+      const SKIN="#f0c6a0", TAIL="#2f9e9e", TAIL2="#247d7d";
+      return sky("#cfe8ff") + ground(82,"#9bb37f")
+        + '<path d="M50 54 Q44 62 47 72 L42 80 Q50 76 58 80 L53 72 Q56 62 50 54 Z" fill="'+TAIL+'"/>'  // Schwanz
+        + '<path d="M42 80 Q50 75 58 80 Q54 84 50 82 Q46 84 42 80 Z" fill="'+TAIL2+'"/>'               // Flosse
+        + '<path d="M48 60 Q50 62 52 60 M47 66 Q50 68 53 66" stroke="'+TAIL2+'" stroke-width="1" fill="none"/>'  // Schuppen
+        + '<path d="M46 40 Q42 50 50 56 Q58 50 54 40 Z" fill="'+SKIN+'"/>'                            // Oberkörper
+        + c(50,34,6,SKIN)                                                                            // Kopf
+        + '<path d="M44 33 Q50 22 56 33 Q56 27 50 26 Q44 27 44 33 Z" fill="#5a3a1e"/>'               // Haare
+        + '<path d="M48 42 Q40 40 36 30" stroke="'+SKIN+'" stroke-width="3" fill="none" stroke-linecap="round"/>'  // Schildarm
+        + '<path d="M52 42 Q62 40 66 24" stroke="'+SKIN+'" stroke-width="3" fill="none" stroke-linecap="round"/>'  // Schwertarm
+        + '<line x1="66" y1="26" x2="66" y2="8" stroke="#9aa3ab" stroke-width="2.2"/>'               // Schwertklinge
+        + '<line x1="62" y1="13" x2="70" y2="13" stroke="#caa54a" stroke-width="1.6"/>'              // Parierstange
+        + c(35,30,6,"#c0392b") + ring(35,30,6,1.2,"#8a2a1f")                                          // Schild
+        + '<line x1="35" y1="25" x2="35" y2="35" stroke="#fff" stroke-width="1.2"/>'
+        + '<line x1="30" y1="30" x2="40" y2="30" stroke="#fff" stroke-width="1.2"/>'
+        + c(48,33,1.1,"#2a1810") + c(52,33,1.1,"#2a1810");                                            // Augen
+    }
+    case "hr": { // ZAGREB — St.-Markus-Kirche (buntes Ziegeldach)
+      const WALL="#eadfca";
+      const roofLeft = '<polygon points="26,48 50,48 50,18" fill="#efe9da"/>';
+      const roofRight = '<polygon points="50,18 50,48 74,48" fill="#2b6cb0"/>';
+      let checker = "";
+      for (let row=0; row<6; row++){
+        const y = 19 + row*4.6;
+        const edgeX = 26 + (48 - y)/30*24;
+        for (let x = edgeX; x < 49.6; x += 4.2){
+          const i = Math.round((x-edgeX)/4.2) + row;
+          checker += r(x.toFixed(1), y, 4, 4.4, (i%2 ? "#c0392b" : "#efe9da"));
+        }
+      }
+      return sky("#cfe8ff") + ground(82,"#9bb37f")
+        + r(28,48,38,30,WALL)                                          // Kirchenschiff
+        + roofLeft + roofRight + checker
+        + '<polygon points="26,48 50,18 74,48" fill="none" stroke="#b9b09a" stroke-width="1"/>'
+        + r(66,30,9,48,"#ded3bd") + '<polygon points="65,30 76,30 70.5,16" fill="#7e6b4a"/>'  // Glockenturm
+        + r(68.5,37,3,5,"#9a8a64") + c(70.5,49,1.6,"#9a8a64")
+        + '<path d="M40 78 L40 64 Q47 57 54 64 L54 78 Z" fill="#7a5a34"/>'  // Portal
+        + c(36,58,1.8,"#9a8a64") + c(58,58,1.8,"#9a8a64");                  // Fenster
     }
     default: return sky("#ddd");
   }
