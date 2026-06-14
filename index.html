@@ -569,6 +569,12 @@ const CAPITALS = [
   { id: "nl", country: "Niederlande", capital: "Amsterdam" },
   { id: "be", country: "Belgien",     capital: "Brüssel" },
   { id: "ch", country: "Schweiz",     capital: "Bern" },
+  { id: "at", country: "Österreich",  capital: "Wien" },
+  { id: "gr", country: "Griechenland", capital: "Athen" },
+  { id: "dk", country: "Dänemark",    capital: "Kopenhagen" },
+  { id: "ie", country: "Irland",      capital: "Dublin" },
+  { id: "no", country: "Norwegen",    capital: "Oslo" },
+  { id: "se", country: "Schweden",    capital: "Stockholm" },
 ];
 
 /* ---------- Reim-Paare für den Reim-Held (Wort -> Reimwort, beide als Emoji) ---------- */
@@ -979,6 +985,71 @@ function scene(id){
         + '<path d="M50 39 Q50 43 47 43 M50 39 Q50 43 53 43" stroke="#3a2414" stroke-width="1.1" fill="none"/>'
         + c(43,31,2,"#2a1810") + c(57,31,2,"#2a1810")
         + c(42.5,30.5,0.7,"#fff") + c(56.5,30.5,0.7,"#fff");
+    }
+    case "at": { // WIEN — Riesenrad (Prater)
+      const cx = 50, cy = 42, R = 30;
+      let spokes = "", cabins = "";
+      for (let i = 0; i < 8; i++){
+        const a = (i/8)*Math.PI*2;
+        const x = cx + Math.cos(a)*R, y = cy + Math.sin(a)*R;
+        spokes += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#c0392b" stroke-width="1.5"/>`;
+        cabins += r(x-3.2, y-2.6, 6.4, 5.2, "#f4c430") + r(x-3.2, y-2.6, 6.4, 1.4, "#e0b020");
+      }
+      return sky("#cfe8ff") + ground(82,"#bcd99a")
+        + '<line x1="40" y1="44" x2="30" y2="82" stroke="#6e4a2a" stroke-width="3.2"/>'
+        + '<line x1="60" y1="44" x2="70" y2="82" stroke="#6e4a2a" stroke-width="3.2"/>'
+        + spokes + ring(cx,cy,R,2.6,"#c0392b") + cabins
+        + c(cx,cy,4.5,"#6e4a2a") + c(cx,cy,2,"#a9743f");
+    }
+    case "gr": { // ATHEN — Parthenon (Tempel)
+      let cols = "";
+      for (let i = 0; i < 6; i++){ const x = 23 + i*9.4; cols += r(x,42,5.6,28,"#efe9d8") + r(x+3.6,42,1.8,28,"#dcd2bb"); }
+      return sky("#cfe8ff") + ground(76,"#cdb98a")
+        + r(17,70,66,6,"#e8e0cd") + r(20,67,60,4,"#ded3b8")
+        + cols + r(18,34,64,8,"#f2ecd9")
+        + '<polygon points="14,34 86,34 50,17" fill="#efe7d2"/>'
+        + '<polygon points="20,33 80,33 50,21" fill="#d8cdb2"/>';
+    }
+    case "dk": { // KOPENHAGEN — bunte Nyhavn-Häuser am Wasser
+      const cols = ["#e74c3c","#f1c40f","#2980b9","#27ae60","#e67e22"];
+      let houses = "";
+      for (let i = 0; i < 5; i++){
+        const x = 14 + i*15, col = cols[i];
+        houses += r(x,40,13,38,col)
+          + `<polygon points="${x},40 ${x+13},40 ${x+6.5},32" fill="${col}"/>`
+          + r(x+2.5,46,3,4,"#fff") + r(x+7.5,46,3,4,"#fff")
+          + r(x+2.5,55,3,4,"#fff") + r(x+7.5,55,3,4,"#fff")
+          + r(x+4.5,66,4,12,"#5a3a1a");
+      }
+      return sky("#cfe8ff") + ground(78,"#7fb6d8") + houses;
+    }
+    case "ie": { // DUBLIN — Kleeblatt (Shamrock)
+      const leaf = (lx,ly,rot) => `<path transform="rotate(${rot} ${lx} ${ly})" d="M${lx} ${ly} C ${lx-13} ${ly-7} ${lx-12} ${ly-23} ${lx} ${ly-16} C ${lx+12} ${ly-23} ${lx+13} ${ly-7} ${lx} ${ly} Z" fill="#2e9e3f"/>`;
+      return sky("#cfe8ff") + ground(80,"#bcd99a")
+        + '<path d="M50 80 Q47 62 50 50" stroke="#2e7d32" stroke-width="3" fill="none"/>'
+        + leaf(50,50,0) + leaf(50,50,120) + leaf(50,50,-120)
+        + c(50,50,2.4,"#256d2c");
+    }
+    case "no": { // OSLO — Wikingerschiff
+      return sky("#cfe8ff") + ground(72,"#6ea9d6")
+        + '<path d="M16 60 Q50 52 84 60 Q80 72 50 72 Q20 72 16 60 Z" fill="#7a4a28"/>'
+        + r(18,58,64,2.6,"#a9743f")
+        + '<line x1="50" y1="58" x2="50" y2="24" stroke="#5e3a1e" stroke-width="2.5"/>'
+        + '<rect x="34" y="26" width="32" height="22" fill="#eef0f2"/>'
+        + r(34,26,32,4.4,"#c0392b") + r(34,35,32,4.4,"#c0392b") + r(34,44,32,4.4,"#c0392b")
+        + '<path d="M84 60 Q92 57 90 49 Q88 53 84 54 Z" fill="#5e3a1e"/>' + c(88,51,1,"#1a1a1a");
+    }
+    case "se": { // STOCKHOLM — Dalapferd (rotes Holzpferd)
+      const RED = "#c62828";
+      return sky("#cfe8ff") + ground(78,"#bcd99a")
+        + r(34,56,5,16,RED) + r(43,56,5,16,RED) + r(57,56,5,16,RED) + r(65,56,5,16,RED)   // Beine
+        + `<ellipse cx="50" cy="54" rx="22" ry="11" fill="${RED}"/>`                        // Körper
+        + `<path d="M58 54 Q60 40 68 33 Q72 29 78 28 L86 31 L85 36 Q80 37 77 39 Q72 46 70 54 Z" fill="${RED}"/>`  // Hals + Kopf
+        + `<polygon points="76,28 79,21 82,29" fill="${RED}"/>`                              // Ohr
+        + `<polygon points="30,52 20,57 33,59" fill="${RED}"/>`                              // Schwanz
+        + c(81,33,1.5,"#fff")                                                               // Auge
+        + '<path d="M42 56 q4 -4 8 0 q4 -4 8 0" stroke="#fff" stroke-width="1.3" fill="none"/>'  // Kurbits
+        + c(46,62,1.3,"#ffd54f") + c(54,62,1.3,"#ffd54f") + c(50,65,1.2,"#90caf9");
     }
     default: return sky("#ddd");
   }
@@ -1834,8 +1905,11 @@ function loadZoo(){ try { return JSON.parse(localStorage.getItem("lernheld-zoo")
 function saveZoo(z){ try { localStorage.setItem("lernheld-zoo", JSON.stringify(z)); } catch (e) {} }
 function awardSticker(){
   const zoo = loadZoo();
+  const collectedCount = ZOO_ANIMALS.filter(a => zoo[a]).length;
   const fehlend = ZOO_ANIMALS.filter(a => !zoo[a]);
-  const tier = fehlend.length ? pick(fehlend) : pick(ZOO_ANIMALS);
+  let tier;
+  if (collectedCount === 0 && ZOO_ANIMALS.indexOf("🐍") !== -1) tier = "🐍";   // erstes Tier ist immer die Schlange
+  else tier = fehlend.length ? pick(fehlend) : pick(ZOO_ANIMALS);
   zoo[tier] = (zoo[tier] || 0) + 1;
   saveZoo(zoo);
   return { animal: tier, isNew: fehlend.length > 0 };
