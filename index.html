@@ -1708,6 +1708,14 @@ function startGame(m){
     setTimeout(askAloud, 350);
     return;
   }
+  if (m === "paint"){
+    const pic = pick(PAINT_PICTURES);
+    buildStars(pic.regions.length);
+    showScreen("game");
+    el.content.innerHTML = "";
+    renderPaint(pic);
+    return;
+  }
   if (m === "letters")  queue = shuffle(ANIMAL_WORDS).slice(0, ROUND_LENGTH);
   if (m === "rhyme")    queue = shuffle(RHYMES).slice(0, ROUND_LENGTH);
   if (m === "trace")    queue = shuffle([0,1,2,3,4,5,6,7,8,9]).slice(0, ROUND_LENGTH);
@@ -2127,6 +2135,163 @@ function onLetterDone(){
     speak(ch.toLowerCase());                                  // nächsten Buchstaben ansagen
     setupTrace(cv, ch, onLetterDone);
   }
+}
+
+/* ---------- Malen nach Zahlen (Dschungel-Tiere anmalen) ---------- */
+const PAINT_COLORS = {
+  1:{n:"Rot",    c:"#e8453c"}, 2:{n:"Orange", c:"#ff9f1c"}, 3:{n:"Gelb", c:"#ffd23f"},
+  4:{n:"Grün",   c:"#43b047"}, 5:{n:"Blau",   c:"#3a9bdc"}, 6:{n:"Lila", c:"#9b5de5"},
+  7:{n:"Pink",   c:"#ff6fb5"}, 8:{n:"Braun",  c:"#9c6b3f"},
+};
+const PAINT_PICTURES = [
+  { name:"Löwe", emoji:"🦁", view:"0 0 100 100",
+    regions:[
+      { n:2, x:50, y:12, d:"M6,52 a44,44 0 1,0 88,0 a44,44 0 1,0 -88,0 Z" },
+      { n:2, x:30, y:17, d:"M21,18 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0 Z" },
+      { n:2, x:70, y:17, d:"M61,18 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0 Z" },
+      { n:3, x:50, y:42, d:"M20,54 a30,30 0 1,0 60,0 a30,30 0 1,0 -60,0 Z" },
+      { n:7, x:39, y:67, d:"M31,66 a11,9 0 1,0 22,0 a11,9 0 1,0 -22,0 Z" },
+      { n:7, x:61, y:67, d:"M47,66 a11,9 0 1,0 22,0 a11,9 0 1,0 -22,0 Z" },
+    ],
+    details:'<circle cx="40" cy="49" r="3" fill="#2b2b2b"/><circle cx="60" cy="49" r="3" fill="#2b2b2b"/>'+
+            '<path d="M45,57 L55,57 L50,63 Z" fill="#2b2b2b"/><path d="M50,63 V68 M50,68 Q44,68 42,64 M50,68 Q56,68 58,64" fill="none" stroke="#2b2b2b" stroke-width="1.6" stroke-linecap="round"/>' },
+
+  { name:"Wolf", emoji:"🐺", view:"0 0 100 100",
+    regions:[
+      { n:6, x:25, y:26, d:"M18,6 L40,34 L14,40 Z" },
+      { n:6, x:75, y:26, d:"M82,6 L60,34 L86,40 Z" },
+      { n:5, x:50, y:40, d:"M28,30 C18,42 18,64 34,78 C44,88 56,88 66,78 C82,64 82,42 72,30 C60,22 40,22 28,30 Z" },
+      { n:5, x:22, y:61, d:"M30,52 L13,58 L22,69 L34,64 Z" },
+      { n:5, x:78, y:61, d:"M70,52 L87,58 L78,69 L66,64 Z" },
+      { n:3, x:50, y:67, d:"M38,58 C38,76 62,76 62,58 C62,52 38,52 38,58 Z" },
+    ],
+    details:'<circle cx="40" cy="48" r="3" fill="#2b2b2b"/><circle cx="60" cy="48" r="3" fill="#2b2b2b"/>'+
+            '<path d="M45,60 L55,60 L50,66 Z" fill="#2b2b2b"/>' },
+
+  { name:"Gepard", emoji:"🐆", view:"0 0 100 100",
+    regions:[
+      { n:2, x:26, y:18, d:"M16,18 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 Z" },
+      { n:2, x:74, y:18, d:"M64,18 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 Z" },
+      { n:3, x:50, y:43, d:"M26,32 C18,44 20,66 36,80 C45,88 55,88 64,80 C80,66 82,44 74,32 C62,24 38,24 26,32 Z" },
+      { n:7, x:50, y:71, d:"M34,66 a16,11 0 1,0 32,0 a16,11 0 1,0 -32,0 Z" },
+      { n:8, x:28, y:58, d:"M23,58 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 Z" },
+      { n:8, x:72, y:58, d:"M67,58 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 Z" },
+      { n:8, x:33, y:33, fs:5, d:"M28.5,33 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0 -9,0 Z" },
+      { n:8, x:67, y:33, fs:5, d:"M62.5,33 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0 -9,0 Z" },
+    ],
+    details:'<circle cx="41" cy="46" r="3" fill="#2b2b2b"/><circle cx="59" cy="46" r="3" fill="#2b2b2b"/>'+
+            '<path d="M50,57 L54,57 L52,61 Z M48,57 L44,57 L46,61 Z" fill="#2b2b2b"/>'+
+            '<path d="M41,49 Q40,55 46,60 M59,49 Q60,55 54,60" fill="none" stroke="#2b2b2b" stroke-width="1.8" stroke-linecap="round"/>' },
+
+  { name:"Schlange", emoji:"🐍", view:"0 0 100 100",
+    regions:[
+      { n:4, x:30, y:86, d:"M20,86 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 Z" },
+      { n:3, x:50, y:80, d:"M38,80 a12,12 0 1,0 24,0 a12,12 0 1,0 -24,0 Z" },
+      { n:4, x:66, y:68, d:"M53,68 a13,13 0 1,0 26,0 a13,13 0 1,0 -26,0 Z" },
+      { n:3, x:58, y:52, d:"M45,52 a13,13 0 1,0 26,0 a13,13 0 1,0 -26,0 Z" },
+      { n:4, x:40, y:40, d:"M27,40 a13,13 0 1,0 26,0 a13,13 0 1,0 -26,0 Z" },
+      { n:4, x:52, y:26, d:"M38,26 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0 Z" },
+    ],
+    details:'<circle cx="47" cy="22" r="2.6" fill="#2b2b2b"/><circle cx="57" cy="22" r="2.6" fill="#2b2b2b"/>'+
+            '<path d="M52,12 V5 M52,5 L48,1 M52,5 L56,1" fill="none" stroke="#e8453c" stroke-width="1.8" stroke-linecap="round"/>' },
+
+  { name:"Papagei", emoji:"🦜", view:"0 0 100 100",
+    regions:[
+      { n:5, x:38, y:86, d:"M40,70 L30,96 L41,93 L46,76 Z" },
+      { n:4, x:50, y:88, d:"M46,72 L44,96 L54,93 L53,76 Z" },
+      { n:4, x:45, y:64, d:"M32,58 a20,24 0 1,0 40,0 a20,24 0 1,0 -40,0 Z" },
+      { n:3, x:64, y:62, d:"M52,60 a12,18 0 1,0 24,0 a12,18 0 1,0 -24,0 Z" },
+      { n:5, x:42, y:56, d:"M40,42 C30,50 32,68 44,73 C51,67 52,50 48,44 Z" },
+      { n:1, x:56, y:29, d:"M42,30 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0 Z" },
+      { n:2, x:78, y:32, d:"M72,27 C85,25 85,39 74,39 C79,35 77,30 72,30 Z" },
+    ],
+    details:'<circle cx="60" cy="27" r="3.1" fill="#2b2b2b"/>' },
+
+  { name:"Schildkröte", emoji:"🐢", view:"0 0 100 100",
+    regions:[
+      { n:4, x:29, y:78, d:"M22,68 L36,68 L34,82 L24,82 Z" },
+      { n:4, x:71, y:78, d:"M64,68 L78,68 L76,82 L66,82 Z" },
+      { n:4, x:88, y:58, d:"M77,58 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0 Z" },
+      { n:8, x:25, y:67, d:"M16,64 a34,12 0 1,0 68,0 a34,12 0 1,0 -68,0 Z" },
+      { n:4, x:50, y:59, d:"M20,64 C20,38 80,38 80,64 Z" },
+      { n:3, x:50, y:52, d:"M50,44 L58,48 L58,56 L50,60 L42,56 L42,48 Z" },
+      { n:2, x:36, y:55, d:"M36,49 L42,52 L42,58 L36,61 L30,58 L30,52 Z" },
+      { n:2, x:64, y:55, d:"M64,49 L70,52 L70,58 L64,61 L58,58 L58,52 Z" },
+    ],
+    details:'<circle cx="89" cy="56" r="2.2" fill="#2b2b2b"/>' },
+];
+
+let paintState = null;
+function renderPaint(pic){
+  el.ask.innerHTML = "Welche Farbe? Tippe eine <b>Zahl</b>!";
+  const NS = "http://www.w3.org/2000/svg";
+  const wrap = document.createElement("div"); wrap.className = "paintwrap";
+
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", pic.view); svg.setAttribute("class", "paintsvg");
+
+  const regs = [];
+  pic.regions.forEach(r => {
+    const p = document.createElementNS(NS, "path");
+    p.setAttribute("d", r.d); p.setAttribute("class", "preg"); p.dataset.n = r.n; p.dataset.done = "0";
+    svg.appendChild(p);
+    regs.push({ el:p, n:r.n });
+  });
+  if (pic.details){ const g = document.createElementNS(NS, "g"); g.innerHTML = pic.details; svg.appendChild(g); }
+  pic.regions.forEach((r, i) => {
+    const t = document.createElementNS(NS, "text");
+    t.setAttribute("x", r.x); t.setAttribute("y", r.y); t.setAttribute("class", "pnumtxt");
+    t.setAttribute("font-size", r.fs || 7); t.textContent = r.n;
+    svg.appendChild(t); regs[i].label = t;
+  });
+  wrap.appendChild(svg);
+
+  // Farb-Palette: nur die im Bild vorkommenden Zahlen
+  const nums = [...new Set(pic.regions.map(r => r.n))].sort((a,b) => a-b);
+  const pal = document.createElement("div"); pal.className = "palette";
+  const swatches = {};
+  nums.forEach(n => {
+    const b = document.createElement("div"); b.className = "swatch"; b.textContent = n;
+    b.style.background = PAINT_COLORS[n].c;
+    b.addEventListener("click", () => selectColor(n));
+    pal.appendChild(b); swatches[n] = b;
+  });
+  wrap.appendChild(pal);
+  el.content.appendChild(wrap);
+
+  paintState = { pic, regs, swatches, sel:null, total:pic.regions.length };
+
+  function selectColor(n){
+    initAudio();
+    paintState.sel = n;
+    Object.keys(swatches).forEach(k => swatches[k].classList.toggle("sel", +k === n));
+    speak(PAINT_COLORS[n].n + ", die " + n);
+  }
+  regs.forEach(rg => {
+    rg.el.addEventListener("click", () => {
+      if (rg.el.dataset.done === "1") return;
+      if (paintState.sel == null){ speak("Tippe zuerst eine Farbe an!"); return; }
+      if (rg.n === paintState.sel){
+        rg.el.style.fill = PAINT_COLORS[paintState.sel].c;
+        rg.el.dataset.done = "1"; rg.el.classList.add("done");
+        if (rg.label) rg.label.style.display = "none";
+        playBlip(); score++; lightStars();
+        if (regs.every(r => r.el.dataset.done === "1")) paintFinish();
+      } else {
+        rg.el.classList.remove("nudge"); void rg.el.offsetWidth; rg.el.classList.add("nudge");
+        playWrong();
+      }
+    });
+  });
+
+  setTimeout(() => speak("Such dir eine Farbe aus und male den " + pic.name + " an!"), 350);
+}
+function paintFinish(){
+  const sw = paintState && paintState.swatches;
+  if (sw) Object.values(sw).forEach(s => s.classList.add("done"));
+  el.mascot.classList.remove("cheer"); void el.mascot.offsetWidth; el.mascot.classList.add("cheer");
+  playCheer(); confettiBurst();
+  setTimeout(() => { confettiBurst(); winRound(); }, 950);
 }
 
 /* ---------- Farben & Formen (Englisch) ---------- */
@@ -2601,9 +2766,9 @@ function lastPlayedText(s){
 }
 const STAT_GAMES = [
   ["letters","🔤 Buchstaben"],["rhyme","🎵 Reime"],["counting","🔢 Zählen"],["addition","➕ Plus"],
-  ["subtraction","➖ Minus"],["pattern","🧩 Muster"],["trace","✏️ Zahlen malen"],["wordtrace","✍️ Wörter"],
-  ["reading","📖 Lesen"],["flags","🏳️ Flaggen"],["capitals","🗺️ Hauptstädte"],["english","🇬🇧 Englisch"],
-  ["shapes","🔶 Farben/Formen"],["sounds","🔊 Geräusche"],["memory","🃏 Memory"],
+  ["subtraction","➖ Minus"],["pattern","🧩 Muster"],["trace","✏️ Zahlen malen"],["paint","🎨 Anmalen"],
+  ["wordtrace","✍️ Wörter"],["reading","📖 Lesen"],["flags","🏳️ Flaggen"],["capitals","🗺️ Hauptstädte"],
+  ["english","🇬🇧 Englisch"],["shapes","🔶 Farben/Formen"],["sounds","🔊 Geräusche"],["memory","🃏 Memory"],
 ];
 
 let alarmFired = false;
@@ -2736,6 +2901,7 @@ function winRound(){
               : mode === "rhyme" ? "Reim-Held"
               : mode === "memory" ? "Memory-Held"
               : mode === "trace" ? "Mal-Held"
+              : mode === "paint" ? "Künstler"
               : mode === "wordtrace" ? "Schreib-Held"
               : mode === "shapes" ? "Farben-Held"
               : mode === "addition" ? "Rechen-Held"
