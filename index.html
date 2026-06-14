@@ -218,7 +218,8 @@
   .summe .grp { display: flex; flex-wrap: wrap; gap: 1cqw 1.5cqw; justify-content: center;
                 align-content: center; max-width: 34cqw; }
   .summe .op { font-size: 11cqw; font-weight: 800; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.18); }
-  .summe .animal { font-size: clamp(24px, 11cqw, 64px); }
+  .summe .grp { max-width: 38cqw; }
+  .summe .animal { font-size: clamp(16px, 8cqw, 46px); }
 
   /* Muster-Held (Muster fortsetzen) */
   .patternrow { display: flex; align-items: center; justify-content: center; gap: 2cqw;
@@ -1513,11 +1514,16 @@ function renderShapes(item){
 const ADD_OBJECTS = ["🍎","🍌","🍓","⭐","🐟","🌸","⚽","🚗","🐶","🐱","🐠","🌷"];
 function makeAdditionRound(n){
   const q = [];
+  const used = [];
   for (let i = 0; i < n; i++){
-    const maxSum = Math.min(4 + Math.floor(i/2), 6);     // sanft steigend bis 6
-    const a = randInt(1, Math.min(3, maxSum - 1));
-    const b = randInt(1, Math.min(3, maxSum - a));
-    q.push({ a, b, sum: a + b, emoji: pick(ADD_OBJECTS) });
+    const maxSum = Math.min(5 + i, 10);                  // wächst über die Runde bis 10
+    const minSum = Math.min(3 + i, maxSum);              // Untergrenze wächst mit -> mehr Abwechslung
+    let sum, tries = 0;
+    do { sum = randInt(minSum, maxSum); tries++; } while (used.includes(sum) && tries < 8);
+    used.push(sum);
+    const a = randInt(Math.max(1, sum - 6), Math.min(sum - 1, 6));  // beide Summanden 1..6, gut zählbar
+    const b = sum - a;
+    q.push({ a, b, sum, emoji: pick(ADD_OBJECTS) });
   }
   return q;
 }
