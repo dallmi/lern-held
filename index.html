@@ -248,29 +248,32 @@
   .readword { font-size: 17cqw; font-weight: 800; letter-spacing: 0.6cqw; line-height: 1.1;
               text-align: center; text-shadow: 0 4px 0 rgba(0,0,0,.18); margin: 1cqh 0 2cqh; }
 
-  /* Belohnungs-Zoo: Knopf im Menü */
+  /* Dschungel-Album: Knopf im Menü */
   .zoo-link { font-family: inherit; border: none; cursor: pointer; width: 100%;
-              background: linear-gradient(135deg,#ffcb05 0%,#ff9800 100%); color: #1c3b1a;
+              background: linear-gradient(135deg,#2fd36b 0%,#138a4a 100%); color: #fff;
               font-size: 5.4cqw; font-weight: 800; padding: 3cqw 5cqw; border-radius: 20px;
+              text-shadow: 0 2px 0 rgba(0,0,0,.25);
               box-shadow: 0 6px 0 rgba(0,0,0,.22), 0 9px 16px rgba(0,0,0,.2);
               transition: transform .08s, box-shadow .08s; }
   .zoo-link:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.22); }
 
-  /* Belohnungs-Zoo: Sammel-Screen */
+  /* Dschungel-Album: Sammel-Screen */
   #zoo { justify-content: flex-start; overflow-y: auto;
          padding-top: max(18px, env(safe-area-inset-top)); padding-bottom: 18px; }
-  .zootitle { text-align: center; font-size: 8.5cqw; margin: 4px 0 2px; text-shadow: 0 4px 0 rgba(0,0,0,.18); }
-  .zoosub { text-align: center; font-size: 4.6cqw; font-weight: 800; color: #1c3b1a;
+  .jungle-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .jungle-bg svg { width: 100%; height: 100%; display: block; }
+  #zoo > *:not(.jungle-bg) { position: relative; z-index: 1; }
+  .zootitle { text-align: center; font-size: 8cqw; margin: 4px 0 2px; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.35); }
+  .zoosub { text-align: center; font-size: 4.4cqw; font-weight: 800; color: #1c3b1a;
             background: #ffd84d; border-radius: 999px; padding: 1.5cqw 5cqw; margin: 2px 0 10px;
-            box-shadow: 0 4px 0 rgba(0,0,0,.16); }
-  .zoogrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; width: 100%; padding: 4px 2px; }
-  .zoocell { aspect-ratio: 1; background: rgba(255,255,255,.92); border-radius: 18px;
-             display: flex; align-items: center; justify-content: center; font-size: 12cqw;
-             position: relative; box-shadow: 0 5px 0 rgba(0,0,0,.14); }
-  .zoocell.locked { background: rgba(255,255,255,.25); color: rgba(255,255,255,.7);
-                    filter: grayscale(1); font-size: 9cqw; box-shadow: none; }
-  .zoocell.fresh { animation: pop .6s ease; box-shadow: 0 0 0 4px #ffd84d, 0 5px 0 rgba(0,0,0,.14); }
-  .zoobadge { position: absolute; right: 4px; bottom: 3px; font-size: 3.4cqw; font-weight: 800;
+            box-shadow: 0 4px 0 rgba(0,0,0,.22); }
+  .zoogrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 4px; width: 100%; padding: 4px 2px; }
+  .zoocell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 14cqw;
+             position: relative; filter: drop-shadow(0 3px 3px rgba(0,0,0,.4)); }
+  .zoocell:nth-child(even) { transform: translateY(12px); }   /* organisch im Dschungel verteilt */
+  .zoocell.locked { opacity: .5; filter: grayscale(1) brightness(.55) drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+  .zoocell.fresh { animation: pop .6s ease; filter: drop-shadow(0 0 9px #ffe34d); }
+  .zoobadge { position: absolute; right: 2px; bottom: 0; font-size: 3.2cqw; font-weight: 800;
               color: #1c3b1a; background: #ffd84d; border-radius: 999px; padding: 0 5px; }
   .zoo-back { margin-top: 14px; }
 
@@ -386,7 +389,7 @@
       <div class="dots" id="pagerDots"></div>
       <button class="arrow" id="pagerNext" aria-label="Nächste Seite">›</button>
     </div>
-    <button class="zoo-link" id="zooBtn">🦁 Mein Zoo 🐯</button>
+    <button class="zoo-link" id="zooBtn">🌴 Mein Dschungel 🐆</button>
   </section>
 
   <!-- Spiel -->
@@ -414,18 +417,19 @@
     </div>
     <div class="win-btns">
       <button class="big-btn" id="againBtn">Nochmal spielen!</button>
-      <button class="ghost-btn" id="zooWinBtn">🦁 Meinen Zoo ansehen</button>
+      <button class="ghost-btn" id="zooWinBtn">🌴 Meinen Dschungel ansehen</button>
       <button class="ghost-btn" id="menuBtn">🏠 Anderes Spiel</button>
     </div>
   </section>
 
   <!-- Belohnungs-Zoo -->
   <section id="zoo" class="screen">
+    <div class="jungle-bg" id="jungleBg"></div>
     <div class="topbar">
       <button class="home" id="zooHome" aria-label="Zurück zum Menü">🏠</button>
       <div class="spacer"></div>
     </div>
-    <h2 class="zootitle">🦁 Mein Zoo 🐯</h2>
+    <h2 class="zootitle">🌴 Mein Dschungel 🐯</h2>
     <div class="zoosub" id="zooProgress">0 / 0</div>
     <div class="zoogrid" id="zooGrid"></div>
   </section>
@@ -1092,6 +1096,7 @@ const el = {
   zooHome: byId("zooHome"),
   zooGrid: byId("zooGrid"),
   zooProgress: byId("zooProgress"),
+  jungleBg: byId("jungleBg"),
 };
 el.mascot.innerHTML = lionMascot();
 updateSpeaker();
@@ -1817,9 +1822,8 @@ function renderReading(item){
 
 /* ---------- Belohnungs-Zoo (Sticker-Sammlung, in localStorage) ---------- */
 const ZOO_ANIMALS = [
-  "🦁","🐯","🐘","🦒","🦓","🐆","🦏","🦛","🐊","🐵",
-  "🐻","🦊","🐺","🐼","🐨","🦘","🦔","🦥","🦦","🦫",
-  "🐧","🦜","🦩","🐢","🐙","🦋","🐝","🐬",
+  "🦁","🐯","🐆","🐘","🦒","🦓","🐊","🐍","🦜","🐒",
+  "🦏","🦛","🦍","🦥","🐢","🦋","🐸","🦎",
 ];
 function loadZoo(){ try { return JSON.parse(localStorage.getItem("lernheld-zoo")) || {}; } catch (e) { return {}; } }
 function saveZoo(z){ try { localStorage.setItem("lernheld-zoo", JSON.stringify(z)); } catch (e) {} }
@@ -1831,16 +1835,34 @@ function awardSticker(){
   saveZoo(zoo);
   return { animal: tier, isNew: fehlend.length > 0 };
 }
+function jungleSceneSVG(){
+  return '<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><linearGradient id="jsky" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#cfeeb0"/><stop offset="0.45" stop-color="#6fc05a"/><stop offset="1" stop-color="#2e7d32"/>' +
+    '</linearGradient></defs>' +
+    '<rect width="100" height="150" fill="url(#jsky)"/>' +
+    '<circle cx="82" cy="15" r="13" fill="#fff6c0" opacity="0.85"/>' +
+    '<g fill="#3f9a45" opacity="0.95"><ellipse cx="10" cy="6" rx="22" ry="14"/><ellipse cx="40" cy="2" rx="24" ry="14"/><ellipse cx="70" cy="4" rx="22" ry="13"/><ellipse cx="98" cy="8" rx="20" ry="14"/></g>' +
+    '<g fill="#2f7d38" opacity="0.9"><ellipse cx="26" cy="0" rx="20" ry="11"/><ellipse cx="58" cy="-2" rx="22" ry="12"/><ellipse cx="92" cy="0" rx="20" ry="12"/></g>' +
+    '<rect x="3" y="28" width="9" height="122" rx="4" fill="#7a5230"/>' +
+    '<rect x="89" y="40" width="8" height="110" rx="4" fill="#6e4a2c"/>' +
+    '<path d="M20 12 Q30 40 22 70 Q16 100 24 145" stroke="#2f7d38" stroke-width="2" fill="none" opacity="0.7"/>' +
+    '<path d="M78 10 Q70 42 80 76 Q88 108 80 145" stroke="#2f7d38" stroke-width="2" fill="none" opacity="0.6"/>' +
+    '<g fill="#3f9a45"><circle cx="22" cy="55" r="3"/><circle cx="24" cy="135" r="3"/><circle cx="80" cy="76" r="3"/><circle cx="80" cy="118" r="3"/></g>' +
+    '<ellipse cx="50" cy="152" rx="85" ry="26" fill="#246b29"/>' +
+    '</svg>';
+}
 function showZoo(freshAnimal){
   const zoo = loadZoo();
   const collected = ZOO_ANIMALS.filter(a => zoo[a]).length;
   el.zooProgress.textContent = collected + " / " + ZOO_ANIMALS.length + " Tiere";
+  if (el.jungleBg && !el.jungleBg.firstChild) el.jungleBg.innerHTML = jungleSceneSVG();
   el.zooGrid.innerHTML = "";
   ZOO_ANIMALS.forEach(a => {
     const cell = document.createElement("div");
     const has = !!zoo[a];
     cell.className = "zoocell" + (has ? "" : " locked") + (a === freshAnimal ? " fresh" : "");
-    cell.textContent = has ? a : "❓";
+    cell.textContent = a;                          // immer das Tier; gesperrt = blasser Schatten
     if (has && zoo[a] > 1){
       const badge = document.createElement("span"); badge.className = "zoobadge"; badge.textContent = "×" + zoo[a];
       cell.appendChild(badge);
@@ -1894,7 +1916,7 @@ function winRound(){
 
   // Belohnung: ein Tier für den Zoo
   lastSticker = awardSticker();
-  el.rewardLabel.textContent = lastSticker.isNew ? "Neues Tier für deinen Zoo!" : "Für deinen Zoo!";
+  el.rewardLabel.textContent = lastSticker.isNew ? "Neues Tier für deinen Dschungel!" : "Für deinen Dschungel!";
   el.rewardAnimal.textContent = lastSticker.animal;
   el.reward.classList.add("show");
 
