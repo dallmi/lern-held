@@ -513,6 +513,7 @@
       <p class="zooset-hint">Tippe bis zu 5 Tiere an – in dieser Reihenfolge werden sie als Nächstes aufgedeckt. ✓ = schon gesammelt.</p>
       <div class="zooset-slots" id="zoosetSlots"></div>
       <div class="zooset-grid" id="zoosetGrid"></div>
+      <button class="zooset-reveal" id="zoosetReveal">🎁 Eine Reihe aufdecken (+4 Tiere)</button>
       <div class="zooset-actions">
         <button class="zooset-clear" id="zoosetClear">Leeren</button>
         <button class="zooset-done" id="zoosetDone">Fertig</button>
@@ -669,6 +670,9 @@ const CAPITALS = [
   { id: "ee", country: "Estland",     capital: "Tallinn" },
   { id: "tr", country: "Türkei",      capital: "Ankara" },
   { id: "lt", country: "Litauen",     capital: "Vilnius" },
+  { id: "lv", country: "Lettland",    capital: "Riga" },
+  { id: "sk", country: "Slowakei",    capital: "Bratislava" },
+  { id: "mt", country: "Malta",       capital: "Valletta" },
 ];
 
 /* ---------- Reim-Paare für den Reim-Held (Wort -> Reimwort, beide als Emoji) ---------- */
@@ -909,6 +913,17 @@ function flagSVG(id){
       body = rect(0,0,90,20,"#0072CE") + rect(0,20,90,20,"#0b0b0b") + rect(0,40,90,20,"#fff"); break;
     case "lt": // Litauen: gelb / grün / rot
       body = rect(0,0,90,20,"#FDB913") + rect(0,20,90,20,"#006A44") + rect(0,40,90,20,"#C1272D"); break;
+    case "lv": // Lettland: karminrot / weiß (schmal) / karminrot
+      body = rect(0,0,90,24,"#9E1B32") + rect(0,24,90,12,"#fff") + rect(0,36,90,24,"#9E1B32"); break;
+    case "sk": // Slowakei: weiß / blau / rot + Wappen (Doppelkreuz auf 3 Hügeln)
+      body = rect(0,0,90,20,"#fff") + rect(0,20,90,20,"#0B4EA2") + rect(0,40,90,20,"#EE1C25")
+           + '<path d="M13 16 L31 16 L31 32 Q31 42 22 46 Q13 42 13 32 Z" fill="#fff"/>'
+           + '<path d="M14.5 17.5 L29.5 17.5 L29.5 31.5 Q29.5 40.5 22 44 Q14.5 40.5 14.5 31.5 Z" fill="#EE1C25"/>'
+           + '<path d="M15 40 Q18 35 21 40 Q24 34 27 40 Q29 37 30 40 L30 42 L14 42 Z" fill="#0B4EA2"/>'
+           + rect(21,23,2,16,"#fff") + rect(17.5,27,9,2,"#fff") + rect(16,32,12,2,"#fff"); break;
+    case "mt": // Malta: weiß / rot senkrecht + Georgskreuz (Ecke)
+      body = rect(0,0,45,60,"#fff") + rect(45,0,45,60,"#CF142B")
+           + rect(6,7,11,11,"#cfd2d6") + rect(9.5,7,4,11,"#9aa0a6") + rect(6,10.5,11,4,"#9aa0a6"); break;
     case "ca": // Kanada: rote Seitenbalken, weiß, rotes Ahornblatt
       body = rect(0,0,22.5,60,"#D52B1E") + rect(67.5,0,22.5,60,"#D52B1E") + rect(22.5,0,45,60,"#fff")
            + mapleLeaf(45,30,"#D52B1E"); break;
@@ -1359,6 +1374,43 @@ function scene(id){
         + r(46,50,8,16,STONE)                              // Tor
         + '<line x1="50" y1="30" x2="50" y2="18" stroke="#7a6a52" stroke-width="1"/>'  // Fahnenmast
         + r(50,18,10,7,"#FDB913") + r(50,20.3,10,2.3,"#006A44") + r(50,22.6,10,2.4,"#C1272D");  // litauische Fahne
+    }
+    case "lv": { // RIGA — Schwarzhäupterhaus (verzierter Treppengiebel)
+      const RED = "#a6392e", TRIM = "#e8dcc0", GOLD = "#d9b441";
+      const gable = '<polygon points="32,42 36,42 36,34 40,34 40,27 44,27 44,21 50,13 56,21 56,27 60,27 60,34 64,34 64,42 68,42" fill="'+RED+'"/>';
+      const finials = c(50,11,1.6,GOLD) + c(44,20,1.2,GOLD) + c(56,20,1.2,GOLD) + c(40,26,1.2,GOLD) + c(60,26,1.2,GOLD);
+      return sky("#cfe8ff") + ground(80,"#bcd99a")
+        + r(34,42,32,36,RED) + gable + finials                 // Körper + Giebel
+        + r(34,42,32,2,GOLD)                                    // Trauflinie
+        + c(50,33,4.5,TRIM) + ring(50,33,4.5,0.8,GOLD) + c(50,33,4,"#2b5b8c")   // blaue Uhr
+        + '<line x1="50" y1="33" x2="50" y2="30" stroke="#fff" stroke-width="0.7"/><line x1="50" y1="33" x2="52" y2="34" stroke="#fff" stroke-width="0.7"/>'
+        + '<path d="M40 52 L40 46 Q43 43 46 46 L46 52 Z" fill="'+TRIM+'"/>'      // Bogenfenster
+        + '<path d="M54 52 L54 46 Q57 43 60 46 L60 52 Z" fill="'+TRIM+'"/>'
+        + r(42,52,6,4,TRIM) + r(52,52,6,4,TRIM)                // Fenster
+        + '<path d="M45 78 L45 62 Q50 57 55 62 L55 78 Z" fill="#5a4632"/>';     // Portal
+    }
+    case "sk": { // BRATISLAVA — Burg (weiß, vier Ecktürme mit roten Dächern)
+      const W = "#ece6d6", W2 = "#dcd4bf", ROOF = "#b23b2e";
+      const tower = (x,w,topY) => r(x,topY,w,78-topY,W) + `<polygon points="${x-1.5},${topY} ${x+w+1.5},${topY} ${x+w/2},${topY-9}" fill="${ROOF}"/>`;
+      return sky("#cfe8ff")
+        + '<path d="M0 80 Q50 66 100 80 L100 100 L0 100 Z" fill="#8fb46a"/>'    // Burgberg
+        + tower(38,7,40) + tower(55,7,40)                       // hintere Türme
+        + r(30,48,40,30,W)                                      // Hauptbau
+        + tower(26,9,38) + tower(65,9,38)                       // vordere Ecktürme
+        + r(30,48,40,2,W2)
+        + r(36,58,5,8,"#8a9bb5") + r(48,58,5,8,"#8a9bb5") + r(60,58,5,8,"#8a9bb5")  // Fenster
+        + '<path d="M46 78 L46 66 Q50 62 54 66 L54 78 Z" fill="#5a4632"/>';     // Tor
+    }
+    case "mt": { // VALLETTA — Luzzu (buntes Fischerboot mit Auge des Osiris)
+      const Y = "#f2c200", R = "#d6342b", G = "#1f9d57", B = "#1f6fb2";
+      return sky("#cfe8ff") + ground(62,"#5b9bd0")
+        + '<path d="M10 46 Q50 38 90 46 Q85 64 50 64 Q15 64 10 46 Z" fill="'+Y+'"/>'   // Rumpf gelb
+        + '<path d="M12 51 Q50 45 88 51 Q87 55 50 56 Q13 55 12 51 Z" fill="'+R+'"/>'    // roter Streifen
+        + '<path d="M14 56 Q50 50 86 56 Q85 60 50 61 Q15 60 14 56 Z" fill="'+G+'"/>'    // grüner Streifen
+        + '<path d="M88 46 Q97 39 94 30 Q90 36 84 42 Z" fill="'+B+'"/>'                 // hoher Bug
+        + '<path d="M10 46 Q7 42 9 37 Q12 41 15 45 Z" fill="'+B+'"/>'                   // Heck
+        + c(79,48,4,"#fff") + ring(79,48,4,0.7,B) + c(79,48,1.9,"#1a1a1a")             // Auge
+        + c(80.2,46.8,0.7,"#fff");
     }
     default: return sky("#ddd");
   }
