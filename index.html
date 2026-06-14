@@ -167,6 +167,33 @@
   /* Zahlen malen */
   .tracewrap { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; }
   .tracewrap.col { flex-direction: column; gap: 10px; }
+
+  /* Malen nach Zahlen */
+  .paintwrap { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center;
+               justify-content: center; gap: 10px; min-height: 0; }
+  .paintsvg { width: 78cqw; max-width: 330px; aspect-ratio: 1; background: #fff; border-radius: 22px;
+              box-shadow: 0 7px 0 rgba(0,0,0,.18), 0 10px 18px rgba(0,0,0,.18); touch-action: manipulation; }
+  .paintsvg .preg { fill: #fff; stroke: #2b2b2b; stroke-width: 1.4; stroke-linejoin: round; cursor: pointer; }
+  .paintsvg .preg.done { stroke-width: 1; }
+  .paintsvg .pdetail { fill: #2b2b2b; stroke: none; pointer-events: none; }
+  .paintsvg .pnumtxt { fill: #6b7785; font-weight: 800; text-anchor: middle; dominant-baseline: central;
+                       pointer-events: none; font-family: inherit; }
+  .paintsvg .preg.nudge { animation: shake .4s; }
+  .palette { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; padding: 2px 4px 4px; }
+  .swatch { position: relative; width: 15cqw; height: 15cqw; max-width: 72px; max-height: 72px;
+            border-radius: 50%; cursor: pointer; border: 4px solid #fff;
+            box-shadow: 0 4px 0 rgba(0,0,0,.22), 0 6px 12px rgba(0,0,0,.18);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 7cqw; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5);
+            transition: transform .1s; }
+  .swatch:active { transform: translateY(3px); }
+  .swatch.sel { border-color: #1c3b1a; transform: translateY(-4px) scale(1.08);
+                box-shadow: 0 8px 0 rgba(0,0,0,.28), 0 12px 18px rgba(0,0,0,.25); }
+  .swatch.sel::after { content: "✓"; position: absolute; top: -10px; right: -6px; font-size: 4.6cqw;
+                       background: #1c3b1a; color: #fff; border-radius: 50%; width: 7cqw; height: 7cqw;
+                       max-width: 30px; max-height: 30px; display: flex; align-items: center; justify-content: center;
+                       text-shadow: none; }
+  .swatch.done { opacity: .4; }
   .wordstrip { display: flex; gap: 7px; font-weight: 800; font-size: 9cqw; text-shadow: 0 2px 0 rgba(0,0,0,.2); }
   .wordstrip .wl { color: #fff; opacity: .45; transition: transform .2s, opacity .2s, color .2s; }
   .wordstrip .wl.active { opacity: 1; color: #ffe34d; transform: scale(1.18); }
@@ -420,6 +447,10 @@
         <span class="ico">✏️</span>
         <span class="txt"><span class="t1">Zahlen malen</span><br><span class="t2">Male die Zahl mit dem Finger nach!</span></span>
       </button>
+      <button class="tile" data-mode="paint">
+        <span class="ico">🎨</span>
+        <span class="txt"><span class="t1">Tiere anmalen</span><br><span class="t2">Male die Dschungel-Tiere nach Zahlen aus!</span></span>
+      </button>
       <button class="tile" data-mode="wordtrace">
         <span class="ico">✍️</span>
         <span class="txt"><span class="t1">Wörter schreiben</span><br><span class="t2">Schreibe deinen Namen & mehr!</span></span>
@@ -523,7 +554,7 @@
       <p class="zooset-hint">Tippe bis zu 5 Tiere an – in dieser Reihenfolge werden sie als Nächstes aufgedeckt. ✓ = schon gesammelt.</p>
       <div class="zooset-slots" id="zoosetSlots"></div>
       <div class="zooset-grid" id="zoosetGrid"></div>
-      <button class="zooset-reveal" id="zoosetReveal">🎁 Eine Reihe aufdecken (+4 Tiere)</button>
+      <button class="zooset-reveal" id="zoosetReveal">🎁 Gewählte Tiere aufdecken</button>
       <div class="zooset-actions">
         <button class="zooset-clear" id="zoosetClear">Leeren</button>
         <button class="zooset-done" id="zoosetDone">Fertig</button>
@@ -683,6 +714,9 @@ const CAPITALS = [
   { id: "lv", country: "Lettland",    capital: "Riga" },
   { id: "sk", country: "Slowakei",    capital: "Bratislava" },
   { id: "mt", country: "Malta",       capital: "Valletta" },
+  { id: "si", country: "Slowenien",   capital: "Ljubljana" },
+  { id: "rs", country: "Serbien",     capital: "Belgrad" },
+  { id: "lu", country: "Luxemburg",   capital: "Luxemburg" },
 ];
 
 /* ---------- Reim-Paare für den Reim-Held (Wort -> Reimwort, beide als Emoji) ---------- */
@@ -934,6 +968,22 @@ function flagSVG(id){
     case "mt": // Malta: weiß / rot senkrecht + Georgskreuz (Ecke)
       body = rect(0,0,45,60,"#fff") + rect(45,0,45,60,"#CF142B")
            + rect(6,7,11,11,"#cfd2d6") + rect(9.5,7,4,11,"#9aa0a6") + rect(6,10.5,11,4,"#9aa0a6"); break;
+    case "si": // Slowenien: weiß / blau / rot + Wappen (Triglav + 3 Sterne)
+      body = rect(0,0,90,20,"#fff") + rect(0,20,90,20,"#005DA4") + rect(0,40,90,20,"#ED1C24")
+           + '<path d="M12 8 L32 8 L32 24 Q32 32 22 36 Q12 32 12 24 Z" fill="#005DA4"/>'
+           + '<path d="M12 8 L32 8 L32 24 Q32 32 22 36 Q12 32 12 24 Z" fill="none" stroke="#ED1C24" stroke-width="1"/>'
+           + '<path d="M14 28 L19 20 L22 24 L25 19 L30 28 Z" fill="#fff"/>'
+           + '<path d="M13 30 q3 -2 5 0 q3 -2 5 0 q3 -2 5 0" stroke="#fff" stroke-width="1" fill="none"/>'
+           + star5(17,13,2,"#FDB913") + star5(27,13,2,"#FDB913") + star5(22,18,2,"#FDB913"); break;
+    case "rs": // Serbien: rot / blau / weiß + vereinfachter Doppeladler
+      body = rect(0,0,90,20,"#C6363C") + rect(0,20,90,20,"#0C4076") + rect(0,40,90,20,"#fff")
+           + '<path d="M22 16 L30 22 L27 22 L31 28 L26 28 L29 34 L22 30 L15 34 L18 28 L13 28 L17 22 L14 22 Z" fill="#fff"/>'
+           + svgCircle(16,15,2.4,"#fff") + svgCircle(28,15,2.4,"#fff")
+           + '<polygon points="13,15 16,16 14,18" fill="#FDB913"/><polygon points="31,15 28,16 30,18" fill="#FDB913"/>'
+           + rect(18,12,8,3,"#FDB913")
+           + rect(20,24,4,6,"#C6363C") + rect(21.5,24,1,6,"#fff") + rect(20,26,4,1,"#fff"); break;
+    case "lu": // Luxemburg: rot / weiß / hellblau (helleres Blau als Niederlande)
+      body = rect(0,0,90,20,"#ED2939") + rect(0,20,90,20,"#fff") + rect(0,40,90,20,"#7BD0E8"); break;
     case "ca": // Kanada: rote Seitenbalken, weiß, rotes Ahornblatt
       body = rect(0,0,22.5,60,"#D52B1E") + rect(67.5,0,22.5,60,"#D52B1E") + rect(22.5,0,45,60,"#fff")
            + mapleLeaf(45,30,"#D52B1E"); break;
@@ -1421,6 +1471,48 @@ function scene(id){
         + '<path d="M10 46 Q7 42 9 37 Q12 41 15 45 Z" fill="'+B+'"/>'                   // Heck
         + c(79,48,4,"#fff") + ring(79,48,4,0.7,B) + c(79,48,1.9,"#1a1a1a")             // Auge
         + c(80.2,46.8,0.7,"#fff");
+    }
+    case "si": { // LJUBLJANA — grüner Drache (Zmajski most)
+      const GR = "#3a9d5a", GR2 = "#2c7e46", BELLY = "#bfe3a8";
+      return sky("#cfe8ff") + ground(80,"#bcd99a")
+        + r(34,68,32,10,"#b9a98c") + r(34,68,32,2,"#ccbd9e")        // Sockel
+        + '<path d="M30 68 Q26 52 40 50 Q44 40 54 42 Q70 40 72 54 Q78 56 74 66 Q70 56 60 58 L40 58 Q34 60 30 68 Z" fill="'+GR+'"/>'  // Körper
+        + '<path d="M40 58 Q44 64 52 60 Q58 64 64 58 Z" fill="'+BELLY+'"/>'   // Bauch
+        + '<path d="M52 42 Q58 30 70 30 Q66 36 68 42 Q60 40 54 46 Z" fill="'+GR+'"/>'  // Hals/Kopf
+        + '<path d="M66 30 Q78 26 82 32 Q76 33 72 38 Q70 33 66 34 Z" fill="'+GR+'"/>'  // Schnauze
+        + '<path d="M72 36 L82 33 L80 38 L74 38 Z" fill="#fff"/>'      // Zähne
+        + '<polygon points="64,30 66,24 69,30" fill="'+GR2+'"/><polygon points="69,29 71,23 74,29" fill="'+GR2+'"/>'  // Hörner
+        + c(70,31,1.3,"#1a1a1a")                                      // Auge
+        + '<path d="M48 44 Q52 32 62 36 Q56 40 54 48 Z" fill="'+GR2+'"/>'  // Flügel
+        + '<path d="M40 58 Q24 60 18 50 Q26 56 34 56 Z" fill="'+GR2+'"/>'  // Schwanz
+        + '<polygon points="46,50 48,46 50,50" fill="'+GR2+'"/><polygon points="52,49 54,45 56,49" fill="'+GR2+'"/>';  // Rückenzacken
+    }
+    case "rs": { // BELGRAD — Tempel des Heiligen Sava (weiß, große Kuppel)
+      const W = "#eef0f2", W2 = "#dde1e6", DOME = "#9aaba2", DOME2 = "#86988e";
+      const cupola = (x,baseY,w,h) => r(x-w,baseY,w*2,3,W2) + `<path d="M${x-w} ${baseY} Q${x} ${baseY-h} ${x+w} ${baseY} Z" fill="${DOME}"/>` + `<line x1="${x}" y1="${baseY-h}" x2="${x}" y2="${baseY-h-3}" stroke="#caa54a" stroke-width="0.8"/><line x1="${x-1.4}" y1="${baseY-h-1.8}" x2="${x+1.4}" y2="${baseY-h-1.8}" stroke="#caa54a" stroke-width="0.8"/>`;
+      return sky("#cfe8ff") + ground(82,"#bcd99a")
+        + r(28,52,44,26,W)                                           // Körper
+        + cupola(34,52,5,8) + cupola(66,52,5,8)                      // Ecktürmchen
+        + r(40,40,20,14,W) + r(40,40,20,3,W2)                        // großer Tambour
+        + `<path d="M38 40 Q38 18 50 18 Q62 18 62 40 Z" fill="${DOME}"/>`   // große Kuppel
+        + `<path d="M44 40 Q44 24 50 22 Q56 24 56 40 Z" fill="${DOME2}"/>`
+        + r(48.5,15,3,4,W2) + `<line x1="50" y1="15" x2="50" y2="10" stroke="#caa54a" stroke-width="1"/><line x1="47.5" y1="12" x2="52.5" y2="12" stroke="#caa54a" stroke-width="1"/>`
+        + '<path d="M46 78 L46 64 Q50 59 54 64 L54 78 Z" fill="#7a6a52"/>'   // Portal
+        + c(36,62,1.8,DOME) + c(64,62,1.8,DOME);
+    }
+    case "lu": { // LUXEMBURG — Adolphe-Brücke (steinerne Bogenbrücke)
+      const STONE = "#ddd2bb", STONE2 = "#cabd9f", VALLEY = "#9ec57a";
+      return sky("#cfe8ff")
+        + r(0,72,100,28,VALLEY)                                      // Tal
+        + r(46,80,8,20,"#7fb0d8")                                    // Fluss
+        + r(8,40,84,7,STONE) + r(8,40,84,2,STONE2)                   // Brückendeck
+        + r(10,47,80,3,STONE)                                        // Geländer-Unterkante
+        + r(20,47,8,25,STONE) + r(72,47,8,25,STONE)                  // Außenpfeiler
+        + r(48,47,4,25,STONE)                                        // Mittelpfeiler
+        + '<path d="M28 72 L28 60 Q40 46 48 60 L48 72 Z" fill="#bcd9ee"/>'   // linker großer Bogen
+        + '<path d="M52 72 L52 60 Q60 46 72 60 L72 72 Z" fill="#bcd9ee"/>'   // rechter großer Bogen
+        + '<path d="M10 72 L10 64 Q15 56 20 64 L20 72 Z" fill="#bcd9ee"/>'   // kleiner Bogen links
+        + '<path d="M80 72 L80 64 Q85 56 90 64 L90 72 Z" fill="#bcd9ee"/>';  // kleiner Bogen rechts
     }
     default: return sky("#ddd");
   }
@@ -2318,6 +2410,16 @@ function revealRow(n){
   saveQueue(queue); saveZoo(zoo);
   return revealed;
 }
+/* Eltern: genau die ausgewählten Tiere (Queue) auf einen Schlag aufdecken */
+function revealSelected(){
+  const zoo = loadZoo();
+  const sel = loadQueue();
+  let revealed = 0;
+  sel.forEach(a => { if (ZOO_ANIMALS.indexOf(a) !== -1 && !zoo[a]){ zoo[a] = (zoo[a] || 0) + 1; revealed++; } });
+  saveZoo(zoo);
+  saveQueue([]);    // Auswahl ist verbraucht
+  return revealed;
+}
 function jungleSceneSVG(){
   return '<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">' +
     '<defs><linearGradient id="jsky" x1="0" y1="0" x2="0" y2="1">' +
@@ -2399,6 +2501,10 @@ function renderZooSettings(){
     cell.addEventListener("click", () => toggleQueueAnimal(a));
     el.zoosetGrid.appendChild(cell);
   });
+  if (el.zoosetReveal){
+    const sel = queue.filter(a => !zoo[a]).length;
+    el.zoosetReveal.textContent = sel ? ("🎁 " + sel + " gewählte Tiere aufdecken") : "🎁 Nächste 4 aufdecken";
+  }
 }
 function toggleQueueAnimal(a){
   let queue = loadQueue();
@@ -2732,7 +2838,7 @@ el.zoosetDone.addEventListener("click", closeZooSettings);
 el.zoosetClear.addEventListener("click", () => { saveQueue([]); playBlip(); renderZooSettings(); });
 el.zoosetReveal.addEventListener("click", () => {
   initAudio();
-  const n = revealRow(4);                 // eine Reihe = 4 Tiere
+  const n = loadQueue().length ? revealSelected() : revealRow(4);  // gewählte Tiere, sonst nächste 4
   closeZooSettings();
   if (n > 0){ showZoo(); playCheer(); confettiBurst(); } else { playWrong(); }
 });
