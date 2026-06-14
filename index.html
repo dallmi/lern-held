@@ -294,6 +294,12 @@
   .pe-row .pe-n { color: #33506a; white-space: nowrap; font-size: 3.5cqw; }
   .pe-total { background: #ffe9a6; }
   .pe-empty { text-align: center; padding: 16px; color: #667; }
+  .pe-subhead { font-weight: 800; font-size: 4cqw; margin: 16px 0 6px; padding-left: 2px; }
+  .pe-today { background: #dff3e6; }
+  .pe-row.pe-fav { background: #fff4cf; box-shadow: inset 0 0 0 2px #f5c84b; }
+  .pe-acc { font-weight: 800; color: #2e7d32; }
+  .pe-acc.low { color: #c0561a; }
+  .pe-weak .pe-n { color: #b4480f; white-space: normal; text-align: right; }
   .pe-timer { margin-top: 14px; background: #fff; border-radius: 14px; padding: 12px 10px; text-align: center; }
   .pe-tlabel { font-weight: 800; font-size: 4.4cqw; }
   .pe-tstatus { font-size: 3.7cqw; color: #33506a; margin: 3px 0 9px; }
@@ -383,6 +389,10 @@
   .zooset-clear { background: #eef0ec; color: #555; }
   .zooset-done { background: #ffcb05; color: #1c3b1a; box-shadow: 0 5px 0 #c79a00; }
   .zooset-done:active { transform: translateY(3px); box-shadow: 0 2px 0 #c79a00; }
+  .zooset-reveal { width: 100%; margin-top: 14px; font-family: inherit; border: none; cursor: pointer; font-weight: 800;
+                   font-size: 4.6cqw; padding: 3cqw; border-radius: 16px; background: linear-gradient(135deg,#2fd36b 0%,#138a4a 100%);
+                   color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.25); box-shadow: 0 5px 0 rgba(0,0,0,.22); }
+  .zooset-reveal:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.22); }
 </style>
 </head>
 <body>
@@ -1540,6 +1550,7 @@ const el = {
   zoosetGrid: byId("zoosetGrid"),
   zoosetClear: byId("zoosetClear"),
   zoosetDone: byId("zoosetDone"),
+  zoosetReveal: byId("zoosetReveal"),
 };
 el.mascot.innerHTML = lionMascot();
 updateSpeaker();
@@ -1570,6 +1581,7 @@ function renderMenuPage(){
 }
 
 function showScreen(name){
+  if (name === "game") playClockGo(); else playClockStop();   // echte Spielzeit nur im Spiel zählen
   Object.values(el.screens).forEach(s => s.classList.remove("active"));
   el.screens[name].classList.add("active");
 }
@@ -2288,6 +2300,24 @@ function awardSticker(){
   saveZoo(zoo);
   return { animal: tier, isNew: wasMissing };
 }
+/* Eltern: eine Reihe (n) neue Tiere direkt aufdecken – Reihenfolge: Eltern-Queue, dann feste Reihenfolge, dann zufällig */
+function revealRow(n){
+  const zoo = loadZoo();
+  let queue = loadQueue();
+  let revealed = 0;
+  for (let k = 0; k < n; k++){
+    const fehlend = ZOO_ANIMALS.filter(a => !zoo[a]);
+    if (!fehlend.length) break;                       // alle schon da
+    let tier = null;
+    while (queue.length && !tier){ const c = queue.shift(); if (!zoo[c]) tier = c; }
+    if (!tier) tier = ZOO_FIRST.find(a => !zoo[a] && ZOO_ANIMALS.indexOf(a) !== -1);
+    if (!tier) tier = pick(fehlend);
+    zoo[tier] = (zoo[tier] || 0) + 1;
+    revealed++;
+  }
+  saveQueue(queue); saveZoo(zoo);
+  return revealed;
+}
 function jungleSceneSVG(){
   return '<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">' +
     '<defs><linearGradient id="jsky" x1="0" y1="0" x2="0" y2="1">' +
@@ -2387,8 +2417,82 @@ function toggleQueueAnimal(a){
    =================================================================== */
 function loadStats(){ try { return JSON.parse(localStorage.getItem("lernheld-stats")) || {rounds:{},stars:{},wrong:{}}; } catch (e) { return {rounds:{},stars:{},wrong:{}}; } }
 function saveStats(s){ try { localStorage.setItem("lernheld-stats", JSON.stringify(s)); } catch (e) {} }
-function statRound(m, stars){ const s = loadStats(); s.rounds=s.rounds||{}; s.stars=s.stars||{}; s.rounds[m]=(s.rounds[m]||0)+1; s.stars[m]=(s.stars[m]||0)+(stars||0); saveStats(s); }
-function statWrong(m){ const s = loadStats(); s.wrong=s.wrong||{}; s.wrong[m]=(s.wrong[m]||0)+1; saveStats(s); }
+
+/* --- Datum/Zeit-Helfer für Heute-Werte, Streak & „zuletzt gespielt" --- */
+function dayStr(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function todayStr(){ return dayStr(new Date()); }
+function yesterdayStr(){ const d = new Date(); d.setDate(d.getDate()-1); return dayStr(d); }
+function daysSince(dateStr){
+  if (!dateStr) return null;
+  const a = new Date(dateStr+"T00:00:00"), b = new Date(todayStr()+"T00:00:00");
+  return Math.round((b - a) / 86400000);
+}
+function ensureToday(s){
+  const t = todayStr();
+  if (!s.today || s.today.date !== t) s.today = { date:t, rounds:0, stars:0, wrong:0, seconds:0 };
+  return s;
+}
+/* Streak/letzter-Tag aktualisieren, sobald wirklich gespielt wird (eine Antwort gegeben) */
+function markPlayedToday(s){
+  const t = todayStr();
+  if (s.lastDate === t) return;
+  s.streak = (s.lastDate === yesterdayStr()) ? (s.streak||0)+1 : 1;
+  s.lastDate = t;
+}
+/* Welches Lern-Item wurde gerade falsch beantwortet? (für die Schwächen-Übersicht) */
+function missLabel(){
+  try {
+    switch (mode){
+      case "letters":     return current && current.l;
+      case "counting":    return (current && current.count != null) ? ("die "+current.count) : null;
+      case "addition":    return current ? (current.a+" + "+current.b) : null;
+      case "subtraction": return current ? (current.a+" − "+current.b) : null;
+      case "trace":       return (typeof current === "number") ? ("die "+current) : null;
+      case "wordtrace":   return (typeof current === "string") ? current : null;
+      case "flags":       return current && current.name;
+      case "capitals":    return current && current.country;
+      case "english":     return current && current.en;
+      case "rhyme":       return current && current.word;
+      case "sounds":      return current && current.name;
+      case "shapes":      return current && (current.type === "color" ? (current.target && current.target.name) : current.target);
+      case "reading":     return current && current.w;
+      default:            return null;   // memory, pattern -> kein sinnvolles Einzel-Item
+    }
+  } catch (e){ return null; }
+}
+function statRound(m, stars){
+  const s = ensureToday(loadStats()); s.rounds=s.rounds||{}; s.stars=s.stars||{};
+  s.rounds[m]=(s.rounds[m]||0)+1; s.stars[m]=(s.stars[m]||0)+(stars||0);
+  s.today.rounds++; s.today.stars += (stars||0);
+  markPlayedToday(s); saveStats(s);
+}
+function statWrong(m){
+  const s = ensureToday(loadStats()); s.wrong=s.wrong||{};
+  s.wrong[m]=(s.wrong[m]||0)+1; s.today.wrong++;
+  const lbl = missLabel();
+  if (lbl != null && String(lbl).trim()){ s.miss=s.miss||{}; s.miss[m]=s.miss[m]||{}; const k=String(lbl); s.miss[m][k]=(s.miss[m][k]||0)+1; }
+  markPlayedToday(s); saveStats(s);
+}
+function addPlaySeconds(secs){
+  if (!secs || secs <= 0) return;
+  const s = ensureToday(loadStats());
+  s.today.seconds = (s.today.seconds||0) + secs;
+  s.totalSeconds = (s.totalSeconds||0) + secs;
+  saveStats(s);
+}
+/* echte Spielzeit messen, solange der Spiel-Screen offen & sichtbar ist */
+let playClockStart = 0;
+function playClockFlush(){ if (!playClockStart) return; const now = Date.now(); const secs = Math.round((now - playClockStart)/1000); playClockStart = now; addPlaySeconds(secs); }
+function playClockGo(){ playClockStart = Date.now(); }
+function playClockStop(){ playClockFlush(); playClockStart = 0; }
+function fmtMinutes(secs){ secs = secs||0; if (secs < 60) return secs < 5 ? "0 Min" : "unter 1 Min"; return Math.round(secs/60) + " Min"; }
+function lastPlayedText(s){
+  const d = daysSince(s.lastDate);
+  if (d === null) return "noch nie";
+  if (d <= 0) return "heute";
+  if (d === 1) return "gestern";
+  return "vor " + d + " Tagen";
+}
 const STAT_GAMES = [
   ["letters","🔤 Buchstaben"],["rhyme","🎵 Reime"],["counting","🔢 Zählen"],["addition","➕ Plus"],
   ["subtraction","➖ Minus"],["pattern","🧩 Muster"],["trace","✏️ Zahlen malen"],["wordtrace","✍️ Wörter"],
@@ -2423,25 +2527,66 @@ function peOverlay(html){
   ov.innerHTML = html; ov.classList.add("show");
 }
 function peClose(){ const ov = document.getElementById("peOverlay"); if (ov) ov.classList.remove("show"); }
+function esc(str){ return String(str).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
 function openParent(){
-  const s = loadStats(), zoo = loadZoo();
-  let totR = 0, totS = 0, totW = 0, rows = "";
+  playClockFlush();                                  // aktuelle Spielzeit sichern
+  const s = ensureToday(loadStats()), zoo = loadZoo();
+
+  // --- Pro Spiel: Runden, Sterne, Trefferquote; Lieblingsspiel markieren ---
+  let totR = 0, totS = 0, totW = 0, rows = "", favMode = null, favR = 0;
+  STAT_GAMES.forEach(([m]) => { const r = (s.rounds&&s.rounds[m])||0; if (r > favR){ favR = r; favMode = m; } });
   STAT_GAMES.forEach(([m,name]) => {
     const r = (s.rounds&&s.rounds[m])||0, st = (s.stars&&s.stars[m])||0, w = (s.wrong&&s.wrong[m])||0;
     totR += r; totS += st; totW += w;
-    if (r || st || w) rows += '<div class="pe-row"><span>'+name+'</span><span class="pe-n">'+r+' Runden · '+st+' ⭐'+(w?(' · '+w+' ✗'):'')+'</span></div>';
+    if (r || st || w){
+      const att = st + w, acc = att ? Math.round(st/att*100) : null;
+      const accHtml = acc===null ? "" : ' · <span class="pe-acc'+(acc<70?" low":"")+'">'+acc+'%</span>';
+      const fav = (m === favMode) ? ' pe-fav' : '';
+      const label = (m === favMode) ? (name+' ⭐') : name;
+      rows += '<div class="pe-row'+fav+'"><span>'+label+'</span><span class="pe-n">'+r+' Runden · '+st+' ⭐'+accHtml+'</span></div>';
+    }
   });
   if (!rows) rows = '<div class="pe-empty">Noch nichts gespielt.</div>';
+  const totAtt = totS + totW, totAcc = totAtt ? Math.round(totS/totAtt*100) : null;
+  const totAccHtml = totAcc===null ? "" : ' · <span class="pe-acc'+(totAcc<70?" low":"")+'">'+totAcc+'%</span>';
+
+  // --- Heute + Streak + zuletzt gespielt ---
+  const td = s.today;
+  const streak = s.streak || 0;
+  const todayHtml =
+    '<div class="pe-subhead">📅 Heute</div><div class="pe-sect">'+
+      '<div class="pe-row pe-today"><span>Gespielt</span><span class="pe-n">'+td.rounds+' Runden · '+td.stars+' ⭐ · '+fmtMinutes(td.seconds)+'</span></div>'+
+      '<div class="pe-row"><span>🔥 Tage in Folge</span><span class="pe-n">'+(streak>0?(streak+(streak===1?' Tag':' Tage')):'–')+'</span></div>'+
+      '<div class="pe-row"><span>Zuletzt gespielt</span><span class="pe-n">'+lastPlayedText(s)+'</span></div>'+
+    '</div>';
+
+  // --- Schwächen: häufigste Fehler je Spiel (Top 3) ---
+  let weakRows = "";
+  STAT_GAMES.forEach(([m,name]) => {
+    const mm = s.miss && s.miss[m];
+    if (!mm) return;
+    const top = Object.keys(mm).sort((a,b) => mm[b]-mm[a]).slice(0,3)
+      .map(k => esc(k)+' ('+mm[k]+'×)').join(", ");
+    if (top) weakRows += '<div class="pe-row pe-weak"><span>'+name+'</span><span class="pe-n">'+top+'</span></div>';
+  });
+  const weakHtml = weakRows
+    ? '<div class="pe-subhead">🎯 Öfter üben</div><div class="pe-sect">'+weakRows+'</div>'
+    : "";
+
   const coll = ZOO_ANIMALS.filter(a => zoo[a]).length;
   const e = timerEnd(), rem = e ? Math.max(0, Math.round((e-Date.now())/60000)) : 0;
   const tb = [["Aus",0],["10 Min",10],["15 Min",15],["20 Min",20],["30 Min",30]]
     .map(([l,m]) => '<button class="pe-tbtn'+((!e&&m===0)?' on':'')+'" data-min="'+m+'">'+l+'</button>').join("");
   peOverlay(
     '<div class="pe-box"><div class="pe-head">📊 Für Eltern</div>'+
+    todayHtml+
+    '<div class="pe-subhead">🎮 Pro Spiel</div>'+
     '<div class="pe-sect">'+rows+
-      '<div class="pe-row pe-total"><span>Gesamt</span><span class="pe-n">'+totR+' Runden · '+totS+' ⭐'+(totW?(' · '+totW+' ✗'):'')+'</span></div>'+
+      '<div class="pe-row pe-total"><span>Gesamt</span><span class="pe-n">'+totR+' Runden · '+totS+' ⭐'+totAccHtml+'</span></div>'+
+      '<div class="pe-row"><span>⏱️ Spielzeit gesamt</span><span class="pe-n">'+fmtMinutes(s.totalSeconds)+'</span></div>'+
       '<div class="pe-row"><span>🌴 Tiere im Dschungel</span><span class="pe-n">'+coll+' / '+ZOO_ANIMALS.length+'</span></div>'+
     '</div>'+
+    weakHtml+
     '<div class="pe-timer"><div class="pe-tlabel">⏰ Spielzeit-Wecker</div>'+
       '<div class="pe-tstatus">'+(e?('Aktiv – noch ca. '+rem+' Min'):'Aus')+'</div>'+
       '<div class="pe-tbtns" id="peTbtns">'+tb+'</div></div>'+
@@ -2574,11 +2719,23 @@ if (el.zooBtn){
 }
 setInterval(checkTimer, 5000);
 checkTimer();
+/* Spielzeit regelmäßig sichern; beim Verlassen/Verstecken anhalten, beim Zurückkommen weiterzählen */
+setInterval(playClockFlush, 15000);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) playClockStop();
+  else if (el.screens.game.classList.contains("active")) playClockGo();
+});
 el.zooWinBtn.addEventListener("click", () => { initAudio(); speechSynthesis && speechSynthesis.cancel(); showZoo(lastSticker && lastSticker.animal); });
 el.zooHome.addEventListener("click", () => { showScreen("menu"); });
 el.zooGear.addEventListener("click", () => { initAudio(); openZooSettings(); });
 el.zoosetDone.addEventListener("click", closeZooSettings);
 el.zoosetClear.addEventListener("click", () => { saveQueue([]); playBlip(); renderZooSettings(); });
+el.zoosetReveal.addEventListener("click", () => {
+  initAudio();
+  const n = revealRow(4);                 // eine Reihe = 4 Tiere
+  closeZooSettings();
+  if (n > 0){ showZoo(); playCheer(); confettiBurst(); } else { playWrong(); }
+});
 el.zooSettings.addEventListener("click", (e) => { if (e.target === el.zooSettings) closeZooSettings(); });
 
 window.addEventListener("load", () => setTimeout(pickVoice, 200));
