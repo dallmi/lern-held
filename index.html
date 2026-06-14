@@ -278,6 +278,35 @@
   .zoozoom.show { display: flex; }
   .zoozoom-animal { font-size: 55cqw; line-height: 1; animation: pop .4s ease; filter: drop-shadow(0 8px 14px rgba(0,0,0,.55)); }
   .zoozoom-animal.locked { filter: grayscale(1) brightness(.6); }
+
+  /* Eltern-Panel: Statistik + Spielzeit-Wecker */
+  .pe-link { font-family: inherit; border: none; cursor: pointer; background: transparent;
+             color: rgba(255,255,255,.85); font-size: 3.7cqw; font-weight: 700; margin-top: 10px; text-decoration: underline; }
+  .pe-overlay { position: fixed; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center;
+                background: rgba(0,0,0,.55); padding: 16px; }
+  .pe-overlay.show { display: flex; }
+  .pe-box { background: #f4f7fb; color: #1c3b1a; border-radius: 22px; width: 100%; max-width: 430px;
+            max-height: 92%; overflow-y: auto; padding: 18px; box-shadow: 0 18px 50px rgba(0,0,0,.5); }
+  .pe-head { text-align: center; font-size: 6.2cqw; font-weight: 800; margin-bottom: 12px; }
+  .pe-sect { display: flex; flex-direction: column; gap: 6px; }
+  .pe-row { display: flex; justify-content: space-between; gap: 8px; background: #fff; border-radius: 12px;
+            padding: 2.4cqw 3.2cqw; font-size: 3.7cqw; font-weight: 700; align-items: center; }
+  .pe-row .pe-n { color: #33506a; white-space: nowrap; font-size: 3.5cqw; }
+  .pe-total { background: #ffe9a6; }
+  .pe-empty { text-align: center; padding: 16px; color: #667; }
+  .pe-timer { margin-top: 14px; background: #fff; border-radius: 14px; padding: 12px 10px; text-align: center; }
+  .pe-tlabel { font-weight: 800; font-size: 4.4cqw; }
+  .pe-tstatus { font-size: 3.7cqw; color: #33506a; margin: 3px 0 9px; }
+  .pe-tbtns { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  .pe-tbtn { font-family: inherit; border: none; cursor: pointer; background: #e3eaf2; color: #1c3b1a;
+             font-weight: 800; font-size: 4.2cqw; border-radius: 12px; padding: 2.2cqw 3.6cqw; min-width: 13cqw; }
+  .pe-tbtn.on { background: #2fd36b; color: #fff; }
+  .pe-actions { display: flex; flex-direction: column; gap: 9px; margin-top: 16px; align-items: stretch; }
+  .pe-actions .ghost-btn { background: #e3eaf2; color: #33506a; }
+  .pe-timeup { background: #1f3a4a; color: #fff; border-radius: 24px; padding: 30px 26px; text-align: center;
+               display: flex; flex-direction: column; gap: 16px; align-items: center; max-width: 360px; }
+  .pe-moon { font-size: 26cqw; line-height: 1; animation: jump .8s ease infinite; }
+  .pe-timeup .pe-msg { font-size: 6.4cqw; font-weight: 800; line-height: 1.15; }
   .zoobadge { position: absolute; right: 2px; bottom: 0; font-size: 3.2cqw; font-weight: 800;
               color: #1c3b1a; background: #ffd84d; border-radius: 999px; padding: 0 5px; }
   .zoo-back { margin-top: 14px; }
@@ -317,6 +346,43 @@
                color: #fff; font-size: 4.6cqw; font-weight: 700; padding: 2.4cqw 6cqw; border-radius: 999px; }
 
   #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+
+  .spacer-flex { flex: 1; }
+
+  /* ---------- Eltern-Menü: nächste Belohnungen festlegen ---------- */
+  .zooset { position: fixed; inset: 0; z-index: 70; display: none; align-items: center; justify-content: center;
+            background: rgba(0,0,0,.55); padding: 16px; }
+  .zooset.show { display: flex; }
+  .zooset-box { background: #fff; color: #1c3b1a; border-radius: 22px; width: 100%; max-width: 460px;
+                max-height: 92%; overflow-y: auto; padding: 18px 16px 16px;
+                box-shadow: 0 14px 40px rgba(0,0,0,.45); }
+  .zooset-box h3 { text-align: center; font-size: 6.2cqw; margin: 0 0 4px; }
+  .zooset-hint { text-align: center; font-size: 3.6cqw; color: #4a6b46; margin: 0 0 12px; line-height: 1.3; }
+  .zooset-slots { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
+  .zooset-slot { width: 14cqw; height: 14cqw; max-width: 62px; max-height: 62px; border-radius: 14px;
+                 background: #eef6e9; border: 3px dashed #b6d4ac; display: flex; align-items: center;
+                 justify-content: center; font-size: 9cqw; position: relative; }
+  .zooset-slot.filled { border-style: solid; border-color: #ffcb05; background: #fff8db; }
+  .zooset-slot .num { position: absolute; top: -8px; left: -8px; width: 6.4cqw; height: 6.4cqw;
+                      max-width: 26px; max-height: 26px; border-radius: 50%; background: #1c3b1a; color: #fff;
+                      font-size: 3.6cqw; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .zooset-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .zooset-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 8cqw;
+                 border-radius: 12px; background: #f2f4f0; cursor: pointer; position: relative;
+                 transition: transform .08s; }
+  .zooset-cell:active { transform: scale(.9); }
+  .zooset-cell.picked { background: #fff8db; box-shadow: inset 0 0 0 3px #ffcb05; }
+  .zooset-cell.owned::after { content: "✓"; position: absolute; right: 2px; bottom: 0; font-size: 3.2cqw;
+                              color: #2e7d32; font-weight: 800; }
+  .zooset-cell .pnum { position: absolute; top: -6px; left: -6px; width: 5.6cqw; height: 5.6cqw;
+                       max-width: 22px; max-height: 22px; border-radius: 50%; background: #1c3b1a; color: #fff;
+                       font-size: 3.2cqw; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .zooset-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .zooset-actions button { flex: 1; font-family: inherit; border: none; cursor: pointer; font-weight: 800;
+                           font-size: 4.6cqw; padding: 3cqw 4cqw; border-radius: 999px; }
+  .zooset-clear { background: #eef0ec; color: #555; }
+  .zooset-done { background: #ffcb05; color: #1c3b1a; box-shadow: 0 5px 0 #c79a00; }
+  .zooset-done:active { transform: translateY(3px); box-shadow: 0 2px 0 #c79a00; }
 </style>
 </head>
 <body>
@@ -432,12 +498,27 @@
     <div class="jungle-bg" id="jungleBg"></div>
     <div class="topbar">
       <button class="home" id="zooHome" aria-label="Zurück zum Menü">🏠</button>
-      <div class="spacer"></div>
+      <div class="spacer-flex"></div>
+      <button class="home" id="zooGear" aria-label="Belohnungen festlegen">⚙️</button>
     </div>
     <h2 class="zootitle">🌴 Mein Dschungel 🐯</h2>
     <div class="zoosub" id="zooProgress">0 / 0</div>
     <div class="zoogrid" id="zooGrid"></div>
   </section>
+
+  <!-- Eltern-Menü: nächste Belohnungen festlegen -->
+  <div id="zooSettings" class="zooset">
+    <div class="zooset-box">
+      <h3>🎁 Nächste Belohnungen</h3>
+      <p class="zooset-hint">Tippe bis zu 5 Tiere an – in dieser Reihenfolge werden sie als Nächstes aufgedeckt. ✓ = schon gesammelt.</p>
+      <div class="zooset-slots" id="zoosetSlots"></div>
+      <div class="zooset-grid" id="zoosetGrid"></div>
+      <div class="zooset-actions">
+        <button class="zooset-clear" id="zoosetClear">Leeren</button>
+        <button class="zooset-done" id="zoosetDone">Fertig</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -580,6 +661,10 @@ const CAPITALS = [
   { id: "cz", country: "Tschechien",  capital: "Prag" },
   { id: "pl", country: "Polen",       capital: "Warschau" },
   { id: "hr", country: "Kroatien",    capital: "Zagreb" },
+  { id: "ru", country: "Russland",    capital: "Moskau" },
+  { id: "ua", country: "Ukraine",     capital: "Kiew" },
+  { id: "ro", country: "Rumänien",    capital: "Bukarest" },
+  { id: "bg", country: "Bulgarien",   capital: "Sofia" },
 ];
 
 /* ---------- Reim-Paare für den Reim-Held (Wort -> Reimwort, beide als Emoji) ---------- */
@@ -806,6 +891,12 @@ function flagSVG(id){
 
     case "ro": // Rumänien: blau / gelb / rot senkrecht
       body = rect(0,0,30,60,"#002B7F") + rect(30,0,30,60,"#FCD116") + rect(60,0,30,60,"#CE1126"); break;
+    case "ru": // Russland: weiß / blau / rot
+      body = rect(0,0,90,20,"#fff") + rect(0,20,90,20,"#0039A6") + rect(0,40,90,20,"#D52B1E"); break;
+    case "ua": // Ukraine: blau / gelb
+      body = rect(0,0,90,30,"#0057B7") + rect(0,30,90,30,"#FFD500"); break;
+    case "bg": // Bulgarien: weiß / grün / rot
+      body = rect(0,0,90,20,"#fff") + rect(0,20,90,20,"#00966E") + rect(0,40,90,20,"#D62612"); break;
     case "ca": // Kanada: rote Seitenbalken, weiß, rotes Ahornblatt
       body = rect(0,0,22.5,60,"#D52B1E") + rect(67.5,0,22.5,60,"#D52B1E") + rect(22.5,0,45,60,"#fff")
            + mapleLeaf(45,30,"#D52B1E"); break;
@@ -853,6 +944,11 @@ function rect(x,y,w,h,fill){ return `<rect x="${x}" y="${y}" width="${w}" height
 function roundedRect(x,y,w,h,r,fill){ return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${fill}"/>`; }
 function svgCircle(cx,cy,r,fill){ return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}"/>`; }
 function ring(cx,cy,r,sw,stroke){ return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${stroke}" stroke-width="${sw}"/>`; }
+/* Zwiebelturm-Kuppel (für osteuropäische Kirchen) + orthodoxes Kreuz darauf */
+function onion(cx, baseY, w, h, col){
+  return `<path d="M${cx-w} ${baseY} C ${cx-w} ${baseY-h*0.55} ${cx-w*0.55} ${baseY-h*0.82} ${cx} ${baseY-h} C ${cx+w*0.55} ${baseY-h*0.82} ${cx+w} ${baseY-h*0.55} ${cx+w} ${baseY} Z" fill="${col}"/>`;
+}
+function xcross(cx, topY){ return `<line x1="${cx}" y1="${topY}" x2="${cx}" y2="${topY-5}" stroke="#caa54a" stroke-width="1"/><line x1="${cx-1.8}" y1="${topY-3.2}" x2="${cx+1.8}" y2="${topY-3.2}" stroke="#caa54a" stroke-width="1"/>`; }
 function sun(cx,cy,rInner,rOuter,fill){
   let rays = "";
   for (let i = 0; i < 16; i++){
@@ -1144,6 +1240,59 @@ function scene(id){
         + '<path d="M40 78 L40 64 Q47 57 54 64 L54 78 Z" fill="#7a5a34"/>'  // Portal
         + c(36,58,1.8,"#9a8a64") + c(58,58,1.8,"#9a8a64");                  // Fenster
     }
+    case "ru": { // MOSKAU — Basilius-Kathedrale (bunte Zwiebeltürme)
+      const drum = "#e7d9c2";
+      let s = sky("#cfe8ff") + ground(82,"#bcd99a");
+      const tower = (x, drumTop, dome, dw, dh) => r(x-4, drumTop, 8, 70-drumTop, drum)
+        + onion(x, drumTop, dw, dh, dome)
+        + `<path d="M${x-dw*0.7} ${drumTop-1} Q${x} ${drumTop-dh*0.5} ${x+dw*0.7} ${drumTop-1}" stroke="#fff" stroke-width="0.8" fill="none"/>`
+        + xcross(x, drumTop-dh);
+      s += tower(30, 50, "#2e9e3f", 6, 12);
+      s += tower(70, 50, "#2b6cb0", 6, 12);
+      s += tower(40, 44, "#f1c40f", 5.5, 11);
+      s += tower(60, 44, "#c0392b", 5.5, 11);
+      s += r(45,34,10,36,drum)                                       // Mittelturm
+        + '<polygon points="43,34 57,34 50,16" fill="#c0392b"/>'      // Zeltdach
+        + onion(50, 16, 3.5, 7, "#f1c40f") + xcross(50, 9);          // goldene Spitze
+      return s;
+    }
+    case "ua": { // KIEW — blaue Kirche mit goldenen Kuppeln (St. Michael)
+      const WALL = "#3f7fd0", GOLD = "#f0c419", TRIM = "#fff";
+      return sky("#cfe8ff") + ground(82,"#bcd99a")
+        + r(20,40,9,38,WALL) + r(20,40,9,3,TRIM)                    // Glockenturm (links, hoch)
+        + onion(24.5,40,5,11,GOLD) + xcross(24.5,29)
+        + r(36,46,34,32,WALL) + r(36,46,34,3,TRIM)                  // Kirchenschiff
+        + r(46,34,8,12,WALL)                                        // zentraler Tambour
+        + onion(50,34,7,14,GOLD) + xcross(50,20)                    // große goldene Kuppel
+        + onion(40,46,4,8,GOLD) + xcross(40,38)                     // kleine Kuppeln
+        + onion(62,46,4,8,GOLD) + xcross(62,38)
+        + r(40,56,4,7,TRIM) + r(62,56,4,7,TRIM)                     // weiße Fenster
+        + '<path d="M44 78 L44 66 Q50 60 56 66 L56 78 Z" fill="#caa54a"/>';  // goldenes Portal
+    }
+    case "ro": { // BUKAREST — Athenäum (Rundbau mit Kuppel + Säulenportikus)
+      const WALL = "#ecd9c0", DOME = "#9aa89a";
+      let cols = "";
+      for (let i=0;i<5;i++){ const x=38+i*6; cols += r(x,54,3,18,"#e3d0b6") + r(x+2,54,1,18,"#cdbfa0"); }
+      return sky("#cfe8ff") + ground(80,"#bcd99a")
+        + r(30,46,40,26,WALL)                                       // Rundbau-Körper
+        + `<path d="M30 46 Q50 18 70 46 Z" fill="${DOME}"/>`         // Kuppeldach
+        + r(48.5,16,3,5,DOME) + c(50,15,2,"#caa54a")                // Laterne
+        + '<polygon points="34,54 66,54 50,42" fill="#e8d6bc"/>'    // Giebel des Portikus
+        + cols + r(33,72,34,4,"#d8c6a8")                            // Säulen + Stufe
+        + '<path d="M46 72 L46 60 Q50 56 54 60 L54 72 Z" fill="#7a5a34"/>';  // Tür
+    }
+    case "bg": { // SOFIA — Alexander-Newski-Kathedrale (große goldene Kuppel)
+      const WALL = "#ded7c8", GOLD = "#e8b923", GOLD2 = "#f0c419";
+      return sky("#cfe8ff") + ground(82,"#bcd99a")
+        + r(28,50,44,28,WALL)                                       // Körper
+        + r(22,42,8,36,WALL) + onion(26,42,4.5,9,GOLD) + xcross(26,33)   // Glockenturm links
+        + r(40,38,20,12,WALL)                                       // großer Tambour
+        + `<path d="M40 38 Q40 20 50 20 Q60 20 60 38 Z" fill="${GOLD}"/>`  // große runde Kuppel
+        + r(48.5,16,3,5,WALL) + onion(50,16,2.4,5,GOLD2) + xcross(50,11)
+        + onion(35,50,4,8,GOLD2) + xcross(35,42)                    // kleine Kuppeln
+        + onion(65,50,4,8,GOLD2) + xcross(65,42)
+        + '<path d="M46 78 L46 64 Q50 59 54 64 L54 78 Z" fill="#7a5a34"/>';
+    }
     default: return sky("#ddd");
   }
 }
@@ -1266,6 +1415,12 @@ const el = {
   zooGrid: byId("zooGrid"),
   zooProgress: byId("zooProgress"),
   jungleBg: byId("jungleBg"),
+  zooGear: byId("zooGear"),
+  zooSettings: byId("zooSettings"),
+  zoosetSlots: byId("zoosetSlots"),
+  zoosetGrid: byId("zoosetGrid"),
+  zoosetClear: byId("zoosetClear"),
+  zoosetDone: byId("zoosetDone"),
 };
 el.mascot.innerHTML = lionMascot();
 updateSpeaker();
@@ -1997,15 +2152,22 @@ const ZOO_ANIMALS = [
 ];
 function loadZoo(){ try { return JSON.parse(localStorage.getItem("lernheld-zoo")) || {}; } catch (e) { return {}; } }
 function saveZoo(z){ try { localStorage.setItem("lernheld-zoo", JSON.stringify(z)); } catch (e) {} }
-const ZOO_FIRST = ["🐍","🐯","🦁","🐆"];   // feste Reihenfolge der ersten Tiere, danach zufällig
+const ZOO_FIRST = ["🐺","🐍","🐯","🦁","🐆"];   // feste Reihenfolge der ersten Tiere, danach zufällig
+/* Eltern-Warteschlange: bis zu 5 Tiere, die als Nächstes aufgedeckt werden (localStorage) */
+function loadQueue(){ try { return (JSON.parse(localStorage.getItem("lernheld-queue")) || []).filter(a => ZOO_ANIMALS.indexOf(a) !== -1); } catch (e) { return []; } }
+function saveQueue(q){ try { localStorage.setItem("lernheld-queue", JSON.stringify(q)); } catch (e) {} }
 function awardSticker(){
   const zoo = loadZoo();
   const fehlend = ZOO_ANIMALS.filter(a => !zoo[a]);
-  let tier = ZOO_FIRST.find(a => !zoo[a] && ZOO_ANIMALS.indexOf(a) !== -1);   // nächstes festes Tier
-  if (!tier) tier = fehlend.length ? pick(fehlend) : pick(ZOO_ANIMALS);
+  let tier = null;
+  const queue = loadQueue();                       // 1. von den Eltern festgelegte Tiere haben Vorrang
+  if (queue.length){ tier = queue.shift(); saveQueue(queue); }
+  if (!tier) tier = ZOO_FIRST.find(a => !zoo[a] && ZOO_ANIMALS.indexOf(a) !== -1);   // 2. nächstes festes Tier
+  if (!tier) tier = fehlend.length ? pick(fehlend) : pick(ZOO_ANIMALS);              // 3. zufällig
+  const wasMissing = !zoo[tier];
   zoo[tier] = (zoo[tier] || 0) + 1;
   saveZoo(zoo);
-  return { animal: tier, isNew: fehlend.length > 0 };
+  return { animal: tier, isNew: wasMissing };
 }
 function jungleSceneSVG(){
   return '<svg viewBox="0 0 100 150" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">' +
@@ -2057,7 +2219,121 @@ function openZoom(animal, locked){
   ov.classList.add("show");
 }
 
+/* ---------- Eltern-Menü: nächste 3 Belohnungen festlegen ---------- */
+const QUEUE_MAX = 5;
+function openZooSettings(){ renderZooSettings(); el.zooSettings.classList.add("show"); }
+function closeZooSettings(){ el.zooSettings.classList.remove("show"); }
+function renderZooSettings(){
+  const queue = loadQueue().slice(0, QUEUE_MAX);
+  const zoo = loadZoo();
+  // Slots (1–3)
+  el.zoosetSlots.innerHTML = "";
+  for (let i = 0; i < QUEUE_MAX; i++){
+    const slot = document.createElement("div");
+    const animal = queue[i];
+    slot.className = "zooset-slot" + (animal ? " filled" : "");
+    slot.innerHTML = '<span class="num">' + (i + 1) + '</span>' + (animal || "");
+    el.zoosetSlots.appendChild(slot);
+  }
+  // Tier-Auswahl
+  el.zoosetGrid.innerHTML = "";
+  ZOO_ANIMALS.forEach(a => {
+    const cell = document.createElement("div");
+    const pos = queue.indexOf(a);
+    const owned = !!zoo[a];
+    cell.className = "zooset-cell" + (pos !== -1 ? " picked" : "") + (owned ? " owned" : "");
+    cell.textContent = a;
+    if (pos !== -1){
+      const pn = document.createElement("span"); pn.className = "pnum"; pn.textContent = (pos + 1);
+      cell.appendChild(pn);
+    }
+    cell.addEventListener("click", () => toggleQueueAnimal(a));
+    el.zoosetGrid.appendChild(cell);
+  });
+}
+function toggleQueueAnimal(a){
+  let queue = loadQueue();
+  const pos = queue.indexOf(a);
+  if (pos !== -1)      queue.splice(pos, 1);           // schon gewählt → entfernen
+  else if (queue.length < QUEUE_MAX) queue.push(a);    // sonst hinten anhängen (max. 5)
+  else { playWrong(); return; }                        // Liste voll → kurzes Feedback
+  saveQueue(queue);
+  playBlip();
+  renderZooSettings();
+}
+
 /* ---------- gemeinsame Antwort-Logik ---------- */
+/* ===================================================================
+   ELTERN: Statistik (localStorage) + Spielzeit-Wecker
+   =================================================================== */
+function loadStats(){ try { return JSON.parse(localStorage.getItem("lernheld-stats")) || {rounds:{},stars:{},wrong:{}}; } catch (e) { return {rounds:{},stars:{},wrong:{}}; } }
+function saveStats(s){ try { localStorage.setItem("lernheld-stats", JSON.stringify(s)); } catch (e) {} }
+function statRound(m, stars){ const s = loadStats(); s.rounds=s.rounds||{}; s.stars=s.stars||{}; s.rounds[m]=(s.rounds[m]||0)+1; s.stars[m]=(s.stars[m]||0)+(stars||0); saveStats(s); }
+function statWrong(m){ const s = loadStats(); s.wrong=s.wrong||{}; s.wrong[m]=(s.wrong[m]||0)+1; saveStats(s); }
+const STAT_GAMES = [
+  ["letters","🔤 Buchstaben"],["rhyme","🎵 Reime"],["counting","🔢 Zählen"],["addition","➕ Plus"],
+  ["subtraction","➖ Minus"],["pattern","🧩 Muster"],["trace","✏️ Zahlen malen"],["wordtrace","✍️ Wörter"],
+  ["reading","📖 Lesen"],["flags","🏳️ Flaggen"],["capitals","🗺️ Hauptstädte"],["english","🇬🇧 Englisch"],
+  ["shapes","🔶 Farben/Formen"],["sounds","🔊 Geräusche"],["memory","🃏 Memory"],
+];
+
+let alarmFired = false;
+function timerEnd(){ return parseInt(localStorage.getItem("lernheld-timer-end") || "0", 10) || 0; }
+function setTimer(min){ try { localStorage.setItem("lernheld-timer-end", String(Date.now() + min*60000)); } catch (e) {} alarmFired = false; }
+function clearTimer(){ try { localStorage.removeItem("lernheld-timer-end"); } catch (e) {} alarmFired = false; }
+function checkTimer(){ const e = timerEnd(); if (e && Date.now() >= e && !alarmFired){ alarmFired = true; try { localStorage.removeItem("lernheld-timer-end"); } catch (x) {} fireAlarm(); } }
+function alarmSound(){
+  initAudio(); if (!audioCtx) return;
+  const n = audioCtx.currentTime;
+  for (let k = 0; k < 5; k++){ const t = n + k*0.5;
+    [988,740].forEach((f,i) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); const tt = t + i*0.22;
+      o.type = "square"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, tt); g.gain.exponentialRampToValueAtTime(0.35, tt+0.02); g.gain.exponentialRampToValueAtTime(0.0001, tt+0.2);
+      o.connect(g).connect(audioCtx.destination); o.start(tt); o.stop(tt+0.22);
+    });
+  }
+}
+function fireAlarm(){
+  alarmSound();
+  peOverlay('<div class="pe-timeup"><div class="pe-moon">🌙</div><div class="pe-msg">Zeit ist um!<br>Genug für heute.</div><button class="big-btn" id="peTimeupOk">OK</button></div>');
+  const ok = document.getElementById("peTimeupOk"); if (ok) ok.addEventListener("click", peClose);
+}
+function peOverlay(html){
+  let ov = document.getElementById("peOverlay");
+  if (!ov){ ov = document.createElement("div"); ov.id = "peOverlay"; ov.className = "pe-overlay"; document.getElementById("app").appendChild(ov); }
+  ov.innerHTML = html; ov.classList.add("show");
+}
+function peClose(){ const ov = document.getElementById("peOverlay"); if (ov) ov.classList.remove("show"); }
+function openParent(){
+  const s = loadStats(), zoo = loadZoo();
+  let totR = 0, totS = 0, totW = 0, rows = "";
+  STAT_GAMES.forEach(([m,name]) => {
+    const r = (s.rounds&&s.rounds[m])||0, st = (s.stars&&s.stars[m])||0, w = (s.wrong&&s.wrong[m])||0;
+    totR += r; totS += st; totW += w;
+    if (r || st || w) rows += '<div class="pe-row"><span>'+name+'</span><span class="pe-n">'+r+' Runden · '+st+' ⭐'+(w?(' · '+w+' ✗'):'')+'</span></div>';
+  });
+  if (!rows) rows = '<div class="pe-empty">Noch nichts gespielt.</div>';
+  const coll = ZOO_ANIMALS.filter(a => zoo[a]).length;
+  const e = timerEnd(), rem = e ? Math.max(0, Math.round((e-Date.now())/60000)) : 0;
+  const tb = [["Aus",0],["10 Min",10],["15 Min",15],["20 Min",20],["30 Min",30]]
+    .map(([l,m]) => '<button class="pe-tbtn'+((!e&&m===0)?' on':'')+'" data-min="'+m+'">'+l+'</button>').join("");
+  peOverlay(
+    '<div class="pe-box"><div class="pe-head">📊 Für Eltern</div>'+
+    '<div class="pe-sect">'+rows+
+      '<div class="pe-row pe-total"><span>Gesamt</span><span class="pe-n">'+totR+' Runden · '+totS+' ⭐'+(totW?(' · '+totW+' ✗'):'')+'</span></div>'+
+      '<div class="pe-row"><span>🌴 Tiere im Dschungel</span><span class="pe-n">'+coll+' / '+ZOO_ANIMALS.length+'</span></div>'+
+    '</div>'+
+    '<div class="pe-timer"><div class="pe-tlabel">⏰ Spielzeit-Wecker</div>'+
+      '<div class="pe-tstatus">'+(e?('Aktiv – noch ca. '+rem+' Min'):'Aus')+'</div>'+
+      '<div class="pe-tbtns" id="peTbtns">'+tb+'</div></div>'+
+    '<div class="pe-actions"><button class="ghost-btn" id="peReset">Statistik zurücksetzen</button>'+
+      '<button class="big-btn" id="peClose">Fertig</button></div></div>'
+  );
+  document.getElementById("peClose").addEventListener("click", peClose);
+  document.getElementById("peReset").addEventListener("click", () => { if (confirm("Statistik wirklich zurücksetzen?")){ try { localStorage.removeItem("lernheld-stats"); } catch (x) {} openParent(); } });
+  document.querySelectorAll("#peTbtns .pe-tbtn").forEach(b => b.addEventListener("click", () => { const m = +b.dataset.min; if (m === 0) clearTimer(); else setTimer(m); openParent(); }));
+}
+
 function handleAnswer(isCorrect, btn, praiseFn){
   if (locked) return;
   cancelRead();
@@ -2073,6 +2349,7 @@ function handleAnswer(isCorrect, btn, praiseFn){
     praiseFn(go);            // weiter, sobald das Lob fertig gesprochen ist
     setTimeout(go, 8000);    // Sicherheitsnetz, falls onend nie feuert
   } else {
+    statWrong(mode);
     btn.classList.remove("wrong"); void btn.offsetWidth; btn.classList.add("wrong");
     playWrong();
     if (mode === "english") speakEN(pick(["Try again!", "Almost! Try again.", "Oops! Try another one."]));
@@ -2098,6 +2375,7 @@ function winRound(){
               : mode === "reading" ? "Lese-Held"
               : "Lern-Held";
   el.winText.innerHTML = `Super gemacht!<br>Du bist ein<br>${title}! 🌟`;
+  statRound(mode, score);   // Eltern-Statistik: Runde + Sterne
 
   // Belohnung: ein Tier für den Zoo
   lastSticker = awardSticker();
@@ -2170,8 +2448,19 @@ el.homeBtn.addEventListener("click", () => { cancelRead(); speechSynthesis && sp
 el.againBtn.addEventListener("click", () => { initAudio(); primeSpeech(); startGame(mode); });
 el.menuBtn.addEventListener("click", () => { cancelRead(); speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
 el.zooBtn.addEventListener("click", () => { initAudio(); showZoo(); });
+if (el.zooBtn){
+  el.zooBtn.insertAdjacentHTML("afterend", '<button class="pe-link" id="peLink">📊 Für Eltern</button>');
+  const pl = document.getElementById("peLink");
+  if (pl) pl.addEventListener("click", () => { initAudio(); openParent(); });
+}
+setInterval(checkTimer, 5000);
+checkTimer();
 el.zooWinBtn.addEventListener("click", () => { initAudio(); speechSynthesis && speechSynthesis.cancel(); showZoo(lastSticker && lastSticker.animal); });
 el.zooHome.addEventListener("click", () => { showScreen("menu"); });
+el.zooGear.addEventListener("click", () => { initAudio(); openZooSettings(); });
+el.zoosetDone.addEventListener("click", closeZooSettings);
+el.zoosetClear.addEventListener("click", () => { saveQueue([]); playBlip(); renderZooSettings(); });
+el.zooSettings.addEventListener("click", (e) => { if (e.target === el.zooSettings) closeZooSettings(); });
 
 window.addEventListener("load", () => setTimeout(pickVoice, 200));
 </script>
