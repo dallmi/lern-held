@@ -73,6 +73,10 @@
   .tile[data-mode="flags"]    { background: linear-gradient(135deg,#2fd36b 0%,#0fa89a 100%); }
   .tile[data-mode="capitals"] { background: linear-gradient(135deg,#19c2e6 0%,#2f72e8 100%); }
   .tile[data-mode="english"]  { background: linear-gradient(135deg,#ff6fae 0%,#9d4edd 100%); }
+  .tile[data-mode="shapes"]   { background: linear-gradient(135deg,#ff5252 0%,#ffb300 50%,#26c281 100%); }
+  .tile[data-mode="addition"] { background: linear-gradient(135deg,#36d1dc 0%,#2b86c5 100%); }
+  .tile[data-mode="pattern"]  { background: linear-gradient(135deg,#f7971e 0%,#ffd200 100%); }
+  .tile[data-mode="sounds"]   { background: linear-gradient(135deg,#f857a6 0%,#ff5858 100%); }
   .tile:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0,0,0,.22); }
   .tile .ico {
     font-size: 10cqw; flex: none; width: 17cqw; height: 17cqw; max-width: 84px; max-height: 84px;
@@ -87,6 +91,10 @@
   .tile[data-mode="flags"] .ico    { animation-delay: .8s; }
   .tile[data-mode="capitals"] .ico { animation-delay: 1.2s; }
   .tile[data-mode="english"] .ico  { animation-delay: 1.6s; }
+  .tile[data-mode="shapes"] .ico   { animation-delay: 1.8s; }
+  .tile[data-mode="addition"] .ico { animation-delay: 2.2s; }
+  .tile[data-mode="pattern"] .ico  { animation-delay: 2.4s; }
+  .tile[data-mode="sounds"] .ico   { animation-delay: 2.6s; }
   .tile[data-mode="memory"] .ico   { animation-delay: 2s; }
   @keyframes wiggle { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
   .tile .t1 { font-size: 6.4cqw; font-weight: 800; text-shadow: 0 2px 0 rgba(0,0,0,.18); }
@@ -196,12 +204,29 @@
   .choice:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0,0,0,.18); }
   .choice.big { width: 25cqw; height: 25cqw; max-width: 128px; max-height: 128px; font-size: 13cqw; }
   .choice.emoji { font-size: 15cqw; }
+  .choice.big svg { width: 80%; height: 80%; display: block; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
   .choice.right { animation: pop .45s ease; background: #b8f5b0; }
   @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.1)} 100%{transform:scale(1)} }
   .choice.wrong { animation: shake .4s; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-12px)} 40%{transform:translateX(12px)} 60%{transform:translateX(-8px)} 80%{transform:translateX(8px)} }
   .choice.dim { opacity: .4; pointer-events: none; }
   .choice.reading { transform: scale(1.08); box-shadow: 0 0 0 4px #ffd84d, 0 7px 0 rgba(0,0,0,.18), 0 11px 20px rgba(0,0,0,.28); }
+
+  /* Plus-Held (Rechnen) */
+  .summe { display: flex; align-items: center; justify-content: center; gap: 2.5cqw;
+           flex-wrap: wrap; margin: 2cqh 0 1cqh; width: 100%; }
+  .summe .grp { display: flex; flex-wrap: wrap; gap: 1cqw 1.5cqw; justify-content: center;
+                align-content: center; max-width: 34cqw; }
+  .summe .op { font-size: 11cqw; font-weight: 800; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.18); }
+  .summe .animal { font-size: clamp(24px, 11cqw, 64px); }
+
+  /* Muster-Held (Muster fortsetzen) */
+  .patternrow { display: flex; align-items: center; justify-content: center; gap: 2cqw;
+                flex-wrap: nowrap; margin: 2cqh 0 1cqh; width: 100%; }
+  .patternrow .pcell { font-size: 11cqw; width: 14cqw; height: 14cqw; max-width: 70px; max-height: 70px;
+                       display: flex; align-items: center; justify-content: center; line-height: 1; }
+  .patternrow .pq { background: #fff; color: #c9a100; border-radius: 16px; font-weight: 800;
+                    box-shadow: inset 0 0 0 4px #ffd84d, 0 6px 0 rgba(0,0,0,.16); }
 
   /* Flaggen-Karten */
   .cards { display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 2px 4px 6px; flex: 1; justify-content: center; }
@@ -273,6 +298,22 @@
       <button class="tile" data-mode="english">
         <span class="ico">🇬🇧</span>
         <span class="txt"><span class="t1">Englisch-Held</span><br><span class="t2">Hör das Wort – finde das Bild!</span></span>
+      </button>
+      <button class="tile" data-mode="shapes">
+        <span class="ico">🔶</span>
+        <span class="txt"><span class="t1">Farben &amp; Formen</span><br><span class="t2">Auf Englisch: Find the red star!</span></span>
+      </button>
+      <button class="tile" data-mode="addition">
+        <span class="ico">➕</span>
+        <span class="txt"><span class="t1">Plus-Held</span><br><span class="t2">Wie viel ist das zusammen?</span></span>
+      </button>
+      <button class="tile" data-mode="pattern">
+        <span class="ico">🧩</span>
+        <span class="txt"><span class="t1">Muster-Held</span><br><span class="t2">Wie geht es weiter?</span></span>
+      </button>
+      <button class="tile" data-mode="sounds">
+        <span class="ico">🐮</span>
+        <span class="txt"><span class="t1">Tier-Geräusche</span><br><span class="t2">Welches Tier macht das?</span></span>
       </button>
       <button class="tile" data-mode="memory">
         <span class="ico">🃏</span>
@@ -494,6 +535,44 @@ const LETTER_PATHS = {
 };
 /* Sinnvolle, kurze Wörter (Name + Familie + Alltag). Nur Buchstaben aus LETTER_PATHS/O. */
 const TRACE_WORDS = ["MATTEO", "MAMA", "PAPA", "OMA", "OPA", "AUTO", "BALL", "KEKSE", "KAFFEE", "TÜR"];
+
+/* ---------- Farben & Formen (Englisch) ---------- */
+const COLORS_EN = [
+  { name: "red",    hex: "#e53935" },
+  { name: "blue",   hex: "#1e88e5" },
+  { name: "green",  hex: "#43a047" },
+  { name: "yellow", hex: "#fdd835" },
+  { name: "orange", hex: "#fb8c00" },
+  { name: "purple", hex: "#8e24aa" },
+  { name: "pink",   hex: "#ec407a" },
+];
+const SHAPES_EN = ["circle", "square", "triangle", "star", "heart"];
+function shapeSVG(shape, hex){
+  let inner;
+  if (shape === "circle")        inner = `<circle cx="50" cy="50" r="40" fill="${hex}"/>`;
+  else if (shape === "square")   inner = `<rect x="13" y="13" width="74" height="74" rx="9" fill="${hex}"/>`;
+  else if (shape === "triangle") inner = `<polygon points="50,12 90,86 10,86" fill="${hex}"/>`;
+  else if (shape === "star")     inner = star5(50, 53, 43, hex);
+  else                           inner = `<path d="M50 84 C 8 54 16 20 40 20 C 49 20 50 30 50 33 C 50 30 51 20 60 20 C 84 20 92 54 50 84 Z" fill="${hex}"/>`;
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+}
+function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+/* Eine Runde Fragen erzeugen: mal nach Farbe, mal nach Form */
+function makeColorShapeRound(n){
+  const q = [];
+  for (let i = 0; i < n; i++){
+    if (i % 2 === 0){
+      const shape = pick(SHAPES_EN);
+      const cols = shuffle(COLORS_EN).slice(0, 3);
+      q.push({ type: "color", shape, options: shuffle(cols.slice()), target: cols[0] });
+    } else {
+      const color = pick(COLORS_EN);
+      const shapes = shuffle(SHAPES_EN).slice(0, 3);
+      q.push({ type: "shape", color, options: shuffle(shapes.slice()), target: shapes[0] });
+    }
+  }
+  return shuffle(q);
+}
 function digitStrokes(n){ return (n === 0) ? [ellipseStroke(50,50,23,35,-90)] : DIGIT_PATHS[n]; }
 function resample(stroke, spacing){
   const out = [stroke[0].slice()]; let prev = stroke[0];
@@ -987,6 +1066,7 @@ function startGame(m){
   if (m === "rhyme")    queue = shuffle(RHYMES).slice(0, ROUND_LENGTH);
   if (m === "trace")    queue = shuffle([0,1,2,3,4,5,6,7,8,9]).slice(0, ROUND_LENGTH);
   if (m === "wordtrace") queue = shuffle(TRACE_WORDS).slice(0, 4);
+  if (m === "shapes")   queue = makeColorShapeRound(ROUND_LENGTH);
   if (m === "counting") queue = shuffle(ANIMAL_COUNT).slice(0, ROUND_LENGTH);
   if (m === "flags")    queue = shuffle(COUNTRIES).slice(0, ROUND_LENGTH);
   if (m === "english")  queue = shuffle(ENGLISH).slice(0, ROUND_LENGTH);
@@ -1024,6 +1104,7 @@ function nextQuestion(){
   if (mode === "rhyme")    renderRhyme(current);
   if (mode === "trace")    renderTrace(current);
   if (mode === "wordtrace") renderWord(current);
+  if (mode === "shapes")    renderShapes(current);
   setTimeout(askAloud, 350);
 }
 
@@ -1037,6 +1118,7 @@ function askAloud(){
   if (mode === "memory")   speak("Finde die Tier-Paare!");
   if (mode === "trace")    speak("Male die " + current + " nach!");
   if (mode === "wordtrace") speak("Schreibe " + nice(current) + "!");
+  if (mode === "shapes")    speakEN(current.type === "color" ? "Find the " + current.target.name + " one!" : "Find the " + current.target + "!");
 }
 
 /* ---------- Buchstaben-Detektiv ---------- */
@@ -1386,6 +1468,31 @@ function onLetterDone(){
   }
 }
 
+/* ---------- Farben & Formen (Englisch) ---------- */
+function renderShapes(item){
+  let opts;
+  if (item.type === "color"){
+    el.ask.innerHTML = `Find the <b>${item.target.name}</b> one!`;
+    opts = item.options.map(c => ({ shape: item.shape, hex: c.hex, correct: c.name === item.target.name }));
+  } else {
+    el.ask.innerHTML = `Find the <b>${item.target}</b>!`;
+    opts = item.options.map(s => ({ shape: s, hex: item.color.hex, correct: s === item.target }));
+  }
+  const wrap = document.createElement("div");
+  wrap.className = "choices";
+  opts.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "choice big";
+    b.innerHTML = shapeSVG(o.shape, o.hex);
+    b.addEventListener("click", () => {
+      handleAnswer(o.correct, b, (done) => speakEN(
+        item.type === "color" ? "Yes! " + cap(item.target.name) + "!" : "Yes! A " + item.target + "!", done));
+    });
+    wrap.appendChild(b);
+  });
+  el.content.appendChild(wrap);
+}
+
 /* ---------- gemeinsame Antwort-Logik ---------- */
 function handleAnswer(isCorrect, btn, praiseFn){
   if (locked) return;
@@ -1419,13 +1526,15 @@ function winRound(){
               : mode === "memory" ? "Memory-Held"
               : mode === "trace" ? "Mal-Held"
               : mode === "wordtrace" ? "Schreib-Held"
+              : mode === "shapes" ? "Farben-Held"
               : "Lern-Held";
   el.winText.innerHTML = `Super gemacht!<br>Du bist ein<br>${title}! 🌟`;
   showScreen("win");
   playCheer();
   setTimeout(() => { confettiBurst(); confettiBurst(); }, 150);
-  if (mode === "english") setTimeout(() => speakEN("Well done! You are an English hero!"), 400);
-  else                    setTimeout(() => speak("Super gemacht! Du bist ein " + title + "!"), 400);
+  if (mode === "english")     setTimeout(() => speakEN("Well done! You are an English hero!"), 400);
+  else if (mode === "shapes") setTimeout(() => speakEN("Well done! Great job!"), 400);
+  else                        setTimeout(() => speak("Super gemacht! Du bist ein " + title + "!"), 400);
 }
 
 /* ===================================================================
