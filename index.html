@@ -1071,6 +1071,9 @@ function startGame(m){
   if (m === "flags")    queue = shuffle(COUNTRIES).slice(0, ROUND_LENGTH);
   if (m === "english")  queue = shuffle(ENGLISH).slice(0, ROUND_LENGTH);
   if (m === "capitals") queue = shuffle(CAPITALS).slice(0, ROUND_LENGTH);
+  if (m === "addition") queue = makeAdditionRound(ROUND_LENGTH);
+  if (m === "pattern")  queue = makePatternRound(ROUND_LENGTH);
+  if (m === "sounds")   queue = shuffle(ANIMAL_SOUNDS).slice(0, ROUND_LENGTH);
   buildStars(queue.length);
   showScreen("game");
   nextQuestion();
@@ -1105,6 +1108,9 @@ function nextQuestion(){
   if (mode === "trace")    renderTrace(current);
   if (mode === "wordtrace") renderWord(current);
   if (mode === "shapes")    renderShapes(current);
+  if (mode === "addition")  renderAddition(current);
+  if (mode === "pattern")   renderPattern(current);
+  if (mode === "sounds")    renderSounds(current);
   setTimeout(askAloud, 350);
 }
 
@@ -1119,6 +1125,9 @@ function askAloud(){
   if (mode === "trace")    speak("Male die " + current + " nach!");
   if (mode === "wordtrace") speak("Schreibe " + nice(current) + "!");
   if (mode === "shapes")    speakEN(current.type === "color" ? "Find the " + current.target.name + " one!" : "Find the " + current.target + "!");
+  if (mode === "addition")  speak("Wie viel ist " + current.a + " plus " + current.b + "?");
+  if (mode === "pattern")   speak("Wie geht es weiter?");
+  if (mode === "sounds")    speak(current.sound + "! Welches Tier macht das?");
 }
 
 /* ---------- Buchstaben-Detektiv ---------- */
@@ -1493,6 +1502,134 @@ function renderShapes(item){
   el.content.appendChild(wrap);
 }
 
+/* ---------- Plus-Held (erstes Rechnen) ---------- */
+const ADD_OBJECTS = ["🍎","🍌","🍓","⭐","🐟","🌸","⚽","🚗","🐶","🐱","🐠","🌷"];
+function makeAdditionRound(n){
+  const q = [];
+  for (let i = 0; i < n; i++){
+    const maxSum = Math.min(4 + Math.floor(i/2), 6);     // sanft steigend bis 6
+    const a = randInt(1, Math.min(3, maxSum - 1));
+    const b = randInt(1, Math.min(3, maxSum - a));
+    q.push({ a, b, sum: a + b, emoji: pick(ADD_OBJECTS) });
+  }
+  return q;
+}
+function renderAddition(item){
+  el.ask.innerHTML = `Wie viel ist <b>${item.a} + ${item.b}</b>?`;
+  const row = document.createElement("div"); row.className = "summe";
+  const g1 = document.createElement("div"); g1.className = "grp";
+  const g2 = document.createElement("div"); g2.className = "grp";
+  let counted = 0;
+  function mkObj(parent){
+    const s = document.createElement("span"); s.className = "animal"; s.textContent = item.emoji;
+    s.addEventListener("click", () => {
+      if (s.classList.contains("counted")) return;
+      s.classList.add("counted"); counted++; playBlip(); speak(String(counted));
+    });
+    parent.appendChild(s);
+  }
+  for (let i = 0; i < item.a; i++) mkObj(g1);
+  for (let i = 0; i < item.b; i++) mkObj(g2);
+  const plus = document.createElement("span"); plus.className = "op"; plus.textContent = "+";
+  row.appendChild(g1); row.appendChild(plus); row.appendChild(g2);
+  el.content.appendChild(row);
+
+  const choices = document.createElement("div"); choices.className = "choices";
+  numberChoices(item.sum, item.sum + 2).forEach(num => {
+    const b = document.createElement("button");
+    b.className = "choice big"; b.textContent = String(num);
+    b.addEventListener("click", () => {
+      handleAnswer(num === item.sum, b,
+        (done) => speak("Richtig! " + item.a + " plus " + item.b + " ist " + item.sum + "!", done));
+    });
+    choices.appendChild(b);
+  });
+  el.content.appendChild(choices);
+}
+
+/* ---------- Muster-Held (Muster fortsetzen) ---------- */
+const PATTERN_SETS = [
+  ["🔴","🔵","🟡","🟢"],
+  ["🍎","🍌","🍇","🍓"],
+  ["🐶","🐱","🐭","🐰"],
+  ["⭐","❤️","🔶","🟣"],
+  ["🚗","🚌","🚂","✈️"],
+];
+function makePatternRound(n){
+  const q = [];
+  const types = ["AB","ABC","AAB","ABB"];
+  for (let i = 0; i < n; i++){
+    const set = shuffle(pick(PATTERN_SETS));
+    const type = pick(types);
+    let period, vis;
+    if (type === "AB")       { period = [set[0], set[1]];          vis = 5; }  // A B A B ? -> A
+    else if (type === "ABC") { period = [set[0], set[1], set[2]];  vis = 6; }  // A B C A B ? -> C
+    else if (type === "AAB") { period = [set[0], set[0], set[1]];  vis = 6; }  // A A B A A ? -> B
+    else                     { period = [set[0], set[1], set[1]];  vis = 6; }  // A B B A B ? -> B
+    const seq = [];
+    for (let k = 0; k < vis; k++) seq.push(period[k % period.length]);
+    const answer = seq[seq.length - 1];
+    const shown = seq.slice(0, seq.length - 1);
+    const optsSet = new Set([answer]);
+    for (const s of shuffle(set)){ if (optsSet.size >= 3) break; if (s !== answer) optsSet.add(s); }
+    q.push({ shown, answer, options: shuffle([...optsSet]) });
+  }
+  return q;
+}
+function renderPattern(item){
+  el.ask.innerHTML = `Wie geht es <b>weiter</b>?`;
+  const row = document.createElement("div"); row.className = "patternrow";
+  item.shown.forEach(sym => {
+    const c = document.createElement("span"); c.className = "pcell"; c.textContent = sym; row.appendChild(c);
+  });
+  const slot = document.createElement("span"); slot.className = "pcell pq"; slot.textContent = "?"; row.appendChild(slot);
+  el.content.appendChild(row);
+
+  const choices = document.createElement("div"); choices.className = "choices";
+  item.options.forEach(sym => {
+    const b = document.createElement("button");
+    b.className = "choice big emoji"; b.textContent = sym;
+    b.addEventListener("click", () => {
+      handleAnswer(sym === item.answer, b,
+        (done) => speak(pick(["Richtig! So geht das Muster weiter!", "Genau! Das passt!", "Super! Das kommt als Nächstes!"]), done));
+    });
+    choices.appendChild(b);
+  });
+  el.content.appendChild(choices);
+}
+
+/* ---------- Tier-Geräusche (Geräusch hören, Tier finden) ---------- */
+const ANIMAL_SOUNDS = [
+  { e:"🐶", name:"Hund",    art:"Der", sound:"Wau wau" },
+  { e:"🐱", name:"Katze",   art:"Die", sound:"Miau" },
+  { e:"🐮", name:"Kuh",     art:"Die", sound:"Muh" },
+  { e:"🐷", name:"Schwein", art:"Das", sound:"Oink oink" },
+  { e:"🐑", name:"Schaf",   art:"Das", sound:"Mäh" },
+  { e:"🦆", name:"Ente",    art:"Die", sound:"Quack quack" },
+  { e:"🐔", name:"Hahn",    art:"Der", sound:"Kikeriki" },
+  { e:"🐸", name:"Frosch",  art:"Der", sound:"Quak quak" },
+  { e:"🐴", name:"Pferd",   art:"Das", sound:"Wieher" },
+  { e:"🦁", name:"Löwe",    art:"Der", sound:"Brüll" },
+  { e:"🐭", name:"Maus",    art:"Die", sound:"Fiep fiep" },
+  { e:"🐝", name:"Biene",   art:"Die", sound:"Summ summ" },
+];
+function renderSounds(item){
+  el.ask.innerHTML = `Welches Tier macht <b>„${item.sound}“</b>?`;
+  const distractors = shuffle(ANIMAL_SOUNDS.filter(x => x.name !== item.name)).slice(0, 2);
+  const options = shuffle([item, ...distractors]);
+  const choices = document.createElement("div"); choices.className = "choices";
+  options.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "choice big emoji"; b.textContent = o.e;
+    b.addEventListener("click", () => {
+      handleAnswer(o.name === item.name, b,
+        (done) => speak("Richtig! " + item.art + " " + item.name + " macht " + item.sound + "!", done));
+    });
+    choices.appendChild(b);
+  });
+  el.content.appendChild(choices);
+}
+
 /* ---------- gemeinsame Antwort-Logik ---------- */
 function handleAnswer(isCorrect, btn, praiseFn){
   if (locked) return;
@@ -1527,6 +1664,9 @@ function winRound(){
               : mode === "trace" ? "Mal-Held"
               : mode === "wordtrace" ? "Schreib-Held"
               : mode === "shapes" ? "Farben-Held"
+              : mode === "addition" ? "Rechen-Held"
+              : mode === "pattern" ? "Muster-Held"
+              : mode === "sounds" ? "Geräusche-Held"
               : "Lern-Held";
   el.winText.innerHTML = `Super gemacht!<br>Du bist ein<br>${title}! 🌟`;
   showScreen("win");
