@@ -273,6 +273,11 @@
   .zoocell:nth-child(even) { transform: translateY(12px); }   /* organisch im Dschungel verteilt */
   .zoocell.locked { opacity: .5; filter: grayscale(1) brightness(.55) drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
   .zoocell.fresh { animation: pop .6s ease; filter: drop-shadow(0 0 9px #ffe34d); }
+  .zoozoom { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center;
+             background: rgba(0,0,0,.55); cursor: pointer; }
+  .zoozoom.show { display: flex; }
+  .zoozoom-animal { font-size: 55cqw; line-height: 1; animation: pop .4s ease; filter: drop-shadow(0 8px 14px rgba(0,0,0,.55)); }
+  .zoozoom-animal.locked { filter: grayscale(1) brightness(.6); }
   .zoobadge { position: absolute; right: 2px; bottom: 0; font-size: 3.2cqw; font-weight: 800;
               color: #1c3b1a; background: #ffd84d; border-radius: 999px; padding: 0 5px; }
   .zoo-back { margin-top: 14px; }
@@ -1867,9 +1872,22 @@ function showZoo(freshAnimal){
       const badge = document.createElement("span"); badge.className = "zoobadge"; badge.textContent = "×" + zoo[a];
       cell.appendChild(badge);
     }
+    cell.style.cursor = "pointer";
+    cell.addEventListener("click", () => openZoom(a, !has));
     el.zooGrid.appendChild(cell);
   });
   showScreen("zoo");
+}
+/* Tippt man ein Tier an, erscheint es groß in der Mitte; Tippen schließt es wieder. */
+function openZoom(animal, locked){
+  let ov = document.getElementById("zooZoom");
+  if (!ov){
+    ov = document.createElement("div"); ov.id = "zooZoom"; ov.className = "zoozoom";
+    ov.addEventListener("click", () => ov.classList.remove("show"));
+    document.getElementById("app").appendChild(ov);
+  }
+  ov.innerHTML = '<span class="zoozoom-animal' + (locked ? " locked" : "") + '">' + animal + '</span>';
+  ov.classList.add("show");
 }
 
 /* ---------- gemeinsame Antwort-Logik ---------- */
