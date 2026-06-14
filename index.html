@@ -665,6 +665,10 @@ const CAPITALS = [
   { id: "ua", country: "Ukraine",     capital: "Kiew" },
   { id: "ro", country: "Rumänien",    capital: "Bukarest" },
   { id: "bg", country: "Bulgarien",   capital: "Sofia" },
+  { id: "is", country: "Island",      capital: "Reykjavík" },
+  { id: "ee", country: "Estland",     capital: "Tallinn" },
+  { id: "tr", country: "Türkei",      capital: "Ankara" },
+  { id: "lt", country: "Litauen",     capital: "Vilnius" },
 ];
 
 /* ---------- Reim-Paare für den Reim-Held (Wort -> Reimwort, beide als Emoji) ---------- */
@@ -897,6 +901,14 @@ function flagSVG(id){
       body = rect(0,0,90,30,"#0057B7") + rect(0,30,90,30,"#FFD500"); break;
     case "bg": // Bulgarien: weiß / grün / rot
       body = rect(0,0,90,20,"#fff") + rect(0,20,90,20,"#00966E") + rect(0,40,90,20,"#D62612"); break;
+    case "is": // Island: blau mit weiß-rotem Skandinavienkreuz
+      body = rect(0,0,90,60,"#02529C")
+           + rect(24,0,18,60,"#fff") + rect(0,21,90,18,"#fff")
+           + rect(28.5,0,9,60,"#DC1E35") + rect(0,25.5,90,9,"#DC1E35"); break;
+    case "ee": // Estland: blau / schwarz / weiß
+      body = rect(0,0,90,20,"#0072CE") + rect(0,20,90,20,"#0b0b0b") + rect(0,40,90,20,"#fff"); break;
+    case "lt": // Litauen: gelb / grün / rot
+      body = rect(0,0,90,20,"#FDB913") + rect(0,20,90,20,"#006A44") + rect(0,40,90,20,"#C1272D"); break;
     case "ca": // Kanada: rote Seitenbalken, weiß, rotes Ahornblatt
       body = rect(0,0,22.5,60,"#D52B1E") + rect(67.5,0,22.5,60,"#D52B1E") + rect(22.5,0,45,60,"#fff")
            + mapleLeaf(45,30,"#D52B1E"); break;
@@ -949,6 +961,8 @@ function onion(cx, baseY, w, h, col){
   return `<path d="M${cx-w} ${baseY} C ${cx-w} ${baseY-h*0.55} ${cx-w*0.55} ${baseY-h*0.82} ${cx} ${baseY-h} C ${cx+w*0.55} ${baseY-h*0.82} ${cx+w} ${baseY-h*0.55} ${cx+w} ${baseY} Z" fill="${col}"/>`;
 }
 function xcross(cx, topY){ return `<line x1="${cx}" y1="${topY}" x2="${cx}" y2="${topY-5}" stroke="#caa54a" stroke-width="1"/><line x1="${cx-1.8}" y1="${topY-3.2}" x2="${cx+1.8}" y2="${topY-3.2}" stroke="#caa54a" stroke-width="1"/>`; }
+/* Halbmond (für Moschee-Spitzen) — col vor bg ausgestanzt */
+function crescent(cx,cy,rad,col,bg){ return svgCircle(cx,cy,rad,col) + svgCircle(cx+rad*0.5,cy-rad*0.25,rad*0.82,bg); }
 function sun(cx,cy,rInner,rOuter,fill){
   let rays = "";
   for (let i = 0; i < 16; i++){
@@ -1292,6 +1306,59 @@ function scene(id){
         + onion(35,50,4,8,GOLD2) + xcross(35,42)                    // kleine Kuppeln
         + onion(65,50,4,8,GOLD2) + xcross(65,42)
         + '<path d="M46 78 L46 64 Q50 59 54 64 L54 78 Z" fill="#7a5a34"/>';
+    }
+    case "is": { // REYKJAVÍK — Hallgrímskirkja (gestufte Flügel + Turm)
+      const W = "#e3e6ea", W2 = "#d2d7dd";
+      let s = sky("#cfe8ff") + ground(80,"#bcd99a");
+      const tops = [58,50,42,32];
+      for (let i = 0; i < 4; i++){
+        const top = tops[i];
+        s += r(21+i*6, top, 6.2, 80-top, i%2?W2:W);      // linke Stufe
+        s += r(72.8-i*6, top, 6.2, 80-top, i%2?W2:W);    // rechte Stufe
+      }
+      s += r(45,14,10,66,W) + '<polygon points="45,14 55,14 50,6" fill="'+W2+'"/>'
+        + '<line x1="50" y1="6" x2="50" y2="1" stroke="#9aa3ab" stroke-width="1"/>'
+        + r(47,20,6,40,W2)                                // Fensterband
+        + '<path d="M46 80 L46 66 Q50 60 54 66 L54 80 Z" fill="#7a6a52"/>';  // Portal
+      return s;
+    }
+    case "ee": { // TALLINN — mittelalterliche Türme (Altstadt)
+      const STONE = "#cbb896", STONE2 = "#b9a684", ROOF = "#c0392b", ROOF2 = "#9e2f25";
+      const tower = (x,w,topY,coneH) => r(x,topY,w,76-topY,STONE) + r(x,topY,w,2,STONE2)
+        + `<polygon points="${x-1.5},${topY} ${x+w+1.5},${topY} ${x+w/2},${topY-coneH}" fill="${ROOF}"/>`
+        + `<polygon points="${x+w/2},${topY-coneH} ${x+w+1.5},${topY} ${x+w/2},${topY}" fill="${ROOF2}"/>`
+        + r(x+w/2-1.2,topY+5,2.4,4,"#5a4a30");           // Fensterschlitz
+      let wall = r(14,58,72,18,STONE);
+      for (let x = 14; x < 86; x += 6) wall += r(x,55,4,4,STONE);   // Zinnen
+      return sky("#cfe8ff") + ground(80,"#9bb37f")
+        + wall + tower(18,16,40,16) + tower(43,16,32,20) + tower(66,16,40,16);
+    }
+    case "tr": { // ANKARA — Moschee mit Minaretten
+      const W = "#ece3d2", DOME = "#3c7d8c", GOLD = "#e8b923";
+      const minaret = (x) => r(x,26,5,50,W) + `<polygon points="${x-0.5},26 ${x+5.5},26 ${x+2.5},16" fill="${DOME}"/>`
+        + r(x-0.6,38,6.2,1.6,GOLD) + `<line x1="${x+2.5}" y1="16" x2="${x+2.5}" y2="12" stroke="${GOLD}" stroke-width="0.8"/>`
+        + crescent(x+2.5,10,2,GOLD,"#cfe8ff");
+      return sky("#cfe8ff") + ground(80,"#bcd99a")
+        + minaret(20) + minaret(73)
+        + r(34,48,32,28,W)                                // Gebetshalle
+        + `<path d="M34 48 Q34 26 50 26 Q66 26 66 48 Z" fill="${DOME}"/>`   // große Kuppel
+        + `<line x1="50" y1="26" x2="50" y2="20" stroke="${GOLD}" stroke-width="1"/>` + crescent(50,17,2.6,GOLD,"#cfe8ff")
+        + '<path d="M46 76 L46 64 Q50 57 54 64 L54 76 Z" fill="#7a6a52"/>'   // Spitzbogen-Tor
+        + c(42,40,2,DOME) + c(58,40,2,DOME);              // Fenster
+    }
+    case "lt": { // VILNIUS — Gediminas-Turm (Backstein auf Hügel)
+      const BRICK = "#a8542f", BRICK2 = "#8f4526", STONE = "#cbb896";
+      let bricks = "";
+      for (let row = 0; row < 5; row++){ const y = 34+row*7; bricks += `<line x1="40" y1="${y}" x2="60" y2="${y}" stroke="${BRICK2}" stroke-width="0.6"/>`; }
+      let crenel = ""; for (let x = 40; x < 60; x += 5) crenel += r(x,30,3,4,BRICK);
+      return sky("#cfe8ff")
+        + '<path d="M0 80 Q30 60 50 60 Q70 60 100 80 L100 100 L0 100 Z" fill="#8fb46a"/>'  // Hügel
+        + r(40,32,20,34,BRICK) + r(40,32,20,3,STONE)      // Turmkörper
+        + crenel + bricks
+        + r(45,40,3,5,"#3a2e22") + r(52,40,3,5,"#3a2e22") // Fenster
+        + r(46,50,8,16,STONE)                              // Tor
+        + '<line x1="50" y1="30" x2="50" y2="18" stroke="#7a6a52" stroke-width="1"/>'  // Fahnenmast
+        + r(50,18,10,7,"#FDB913") + r(50,20.3,10,2.3,"#006A44") + r(50,22.6,10,2.4,"#C1272D");  // litauische Fahne
     }
     default: return sky("#ddd");
   }
