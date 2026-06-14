@@ -1904,13 +1904,12 @@ const ZOO_ANIMALS = [
 ];
 function loadZoo(){ try { return JSON.parse(localStorage.getItem("lernheld-zoo")) || {}; } catch (e) { return {}; } }
 function saveZoo(z){ try { localStorage.setItem("lernheld-zoo", JSON.stringify(z)); } catch (e) {} }
+const ZOO_FIRST = ["🐍","🐯","🦁","🐆"];   // feste Reihenfolge der ersten Tiere, danach zufällig
 function awardSticker(){
   const zoo = loadZoo();
-  const collectedCount = ZOO_ANIMALS.filter(a => zoo[a]).length;
   const fehlend = ZOO_ANIMALS.filter(a => !zoo[a]);
-  let tier;
-  if (collectedCount === 0 && ZOO_ANIMALS.indexOf("🐍") !== -1) tier = "🐍";   // erstes Tier ist immer die Schlange
-  else tier = fehlend.length ? pick(fehlend) : pick(ZOO_ANIMALS);
+  let tier = ZOO_FIRST.find(a => !zoo[a] && ZOO_ANIMALS.indexOf(a) !== -1);   // nächstes festes Tier
+  if (!tier) tier = fehlend.length ? pick(fehlend) : pick(ZOO_ANIMALS);
   zoo[tier] = (zoo[tier] || 0) + 1;
   saveZoo(zoo);
   return { animal: tier, isNew: fehlend.length > 0 };
