@@ -468,15 +468,21 @@
     .mcard .back { font-size: 8cqh; }
     .mcard .front { font-size: 12cqh; }
 
-    #win .trophy { font-size: 26cqh; }
-    #win h2 { font-size: 8cqh; }
-    .big-btn { font-size: 6cqh; }
-    .ghost-btn { font-size: 4.4cqh; }
-    #reward .ranimal { font-size: 20cqh; }
-    #reward .rlabel { font-size: 4.4cqh; }
+    /* Gewinn-Screen: kompakter + scrollbar, sonst werden quer die unteren Buttons abgeschnitten */
+    #win { overflow-y: auto; justify-content: safe center; padding-top: 14px; padding-bottom: 14px; }
+    #win .trophy { font-size: 15cqh; }
+    #win h2 { font-size: 6cqh; margin: 6px 0 12px; }
+    .win-btns { gap: 8px; }
+    .big-btn { font-size: 5.4cqh; padding: 1.8cqh 6cqw; }
+    .ghost-btn { font-size: 4cqh; padding: 1.4cqh 6cqw; }
+    #reward { margin: 2px 0 10px; }
+    #reward .ranimal { font-size: 12cqh; }
+    #reward .rlabel { font-size: 4cqh; }
+
     .zootitle { font-size: 8cqh; }
     .zoosub { font-size: 4.4cqh; }
     .zoocell { font-size: 12cqh; }
+    .zoogrid { grid-template-columns: repeat(6, 1fr); }   /* quer mehr Spalten, sonst riesige Zellen */
   }
 </style>
 </head>
