@@ -80,6 +80,7 @@
   .tile[data-mode="subtraction"] { background: linear-gradient(135deg,#fa709a 0%,#fbbf57 100%); }
   .tile[data-mode="reading"]  { background: linear-gradient(135deg,#7367f0 0%,#ce9ffc 100%); }
   .tile[data-mode="maze"]     { background: linear-gradient(135deg,#11998e 0%,#38ef7d 100%); }
+  .tile[data-mode="search"]   { background: linear-gradient(135deg,#00b4db 0%,#0083b0 100%); }
   .tile:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0,0,0,.22); }
   .tile .ico {
     font-size: 10cqw; flex: none; width: 17cqw; height: 17cqw; max-width: 84px; max-height: 84px;
@@ -101,6 +102,7 @@
   .tile[data-mode="subtraction"] .ico { animation-delay: 2.8s; }
   .tile[data-mode="reading"] .ico  { animation-delay: 3s; }
   .tile[data-mode="maze"] .ico     { animation-delay: 3.2s; }
+  .tile[data-mode="search"] .ico   { animation-delay: 3.4s; }
   .tile[data-mode="memory"] .ico   { animation-delay: 2s; }
   @keyframes wiggle { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
   .tile .t1 { font-size: 6.4cqw; font-weight: 800; text-shadow: 0 2px 0 rgba(0,0,0,.18); }
@@ -212,6 +214,20 @@
   .content { flex: 1; width: 100%; display: flex; flex-direction: column;
              align-items: center; justify-content: center; overflow: hidden;
              padding: 4px 10px 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+
+  /* Such-Held (English Wimmelbild) */
+  .seekfield { flex: 1; width: 100%; min-height: 58cqh; position: relative; overflow: hidden;
+               background: rgba(255,255,255,.32); border-radius: 24px; }
+  .seektarget { font-size: 1.35em; vertical-align: middle; margin-left: .15em; }
+  .seekitem { position: absolute; transform: translate(-50%,-50%); background: none; border: none;
+              padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .seekitem .glyph { display: inline-block; line-height: 1; font-size: clamp(26px, 12cqw, 66px);
+                     transform: rotate(var(--r)) scale(var(--s)); transition: opacity .2s; }
+  .seekitem.found { pointer-events: none; }
+  .seekitem.found .glyph { opacity: .45; animation: pop .4s; }
+  .seekitem.found::after { content: "✔"; position: absolute; right: -2px; top: -8px;
+                           font-size: .5em; color: #2bbf8a; -webkit-text-stroke: 2px #fff; font-weight: 900; }
+  .seekitem .glyph.miss { animation: shake .4s; }
 
   /* Buchstaben-Bühne */
   .stage { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 10px; }
@@ -560,6 +576,10 @@
       <button class="tile" data-mode="maze">
         <span class="ico">🌀</span>
         <span class="txt"><span class="t1">Labyrinth-Held</span><br><span class="t2">Bring das Tier mit dem Finger zum Futter!</span></span>
+      </button>
+      <button class="tile" data-mode="search">
+        <span class="ico">🔍</span>
+        <span class="txt"><span class="t1">Such-Held</span><br><span class="t2">Find it in English – tippe das gesuchte Bild!</span></span>
       </button>
       <button class="tile" data-mode="memory">
         <span class="ico">🃏</span>
@@ -1803,6 +1823,7 @@ function startGame(m){
   if (m === "sounds")   queue = shuffle(ANIMAL_SOUNDS).slice(0, ROUND_LENGTH);
   if (m === "reading")  queue = shuffle(READING).slice(0, ROUND_LENGTH);
   if (m === "maze")     queue = makeMazeRound(ROUND_LENGTH);
+  if (m === "search")   queue = makeSearchRound(ROUND_LENGTH);
   buildStars(queue.length);
   showScreen("game");
   nextQuestion();
@@ -1843,6 +1864,7 @@ function nextQuestion(){
   if (mode === "sounds")    renderSounds(current);
   if (mode === "reading")   renderReading(current);
   if (mode === "maze")      renderMaze(current);
+  if (mode === "search")    renderSearch(current);
   setTimeout(askAloud, 350);
 }
 
@@ -2352,6 +2374,95 @@ function setupMaze(cv, N, pair){
   cv.addEventListener("pointermove", move);
   cv.addEventListener("pointerup", up);
   cv.addEventListener("pointercancel", up);
+}
+
+/* ---------- Such-Held (English Wimmelbild / I-Spy) ---------- */
+const EMOJI_EN = {}; ENGLISH.forEach(x => EMOJI_EN[x.e] = x.en);
+const SEARCH_THEMES = {
+  Animals: ["🐶","🐱","🐟","🐦","🐮","🐷","🐴","🦆","🐻","🦁","🐘","🐵"],
+  Food:    ["🍎","🍌","🍰","🥚","🥛"],
+  Toys:    ["⚽","🚗","🏠","📖","👟","🎩"],
+  Nature:  ["☀️","⭐","🌙","🌳","🌸"],
+};
+const NUMW = { 1:"One", 2:"Two", 3:"Three", 4:"Four", 5:"Five" };
+/* Eine Runde: abwechselnd "ein Ding" / "alle finden" (garantierter Mix), Objektzahl wächst 8,8,10,10,12,12. */
+function makeSearchRound(n){
+  const order = shuffle(Object.keys(SEARCH_THEMES));
+  const rounds = [];
+  for (let i = 0; i < n; i++){
+    const theme = order[i % order.length], pool = SEARCH_THEMES[theme];
+    const findAll = i % 2 === 1;
+    rounds.push({
+      theme, target: pick(pool), findAll,
+      targetCount: findAll ? (i >= 4 ? 3 : 2) : 1,
+      total: 8 + Math.min(Math.floor(i / 2) * 2, 4),
+    });
+  }
+  return rounds;
+}
+/* Nicht-überlappende Streupositionen in % (Rejection-Sampling) + Drehung/Größe. */
+function scatterPositions(count){
+  const pts = [], minD = 17;
+  for (let i = 0; i < count; i++){
+    let p = null;
+    for (let t = 0; t < 300; t++){
+      const c = { x: 12 + Math.random()*76, y: 12 + Math.random()*76 };
+      if (pts.every(q => Math.hypot(q.x-c.x, q.y-c.y) >= minD)){ p = c; break; }
+    }
+    if (!p) p = { x: 12 + Math.random()*76, y: 12 + Math.random()*76 };
+    p.r = Math.random()*40 - 20; p.s = 0.85 + Math.random()*0.35;
+    pts.push(p);
+  }
+  return pts;
+}
+function renderSearch(item){
+  const name = (EMOJI_EN[item.target] || "it"), low = name.toLowerCase();
+  const prompt = item.findAll ? "Find all the " + low + "s!" : "Find the " + low + "!";
+  el.ask.innerHTML = `🔍 ${prompt} <span class="seektarget">${item.target}</span>`;
+  // Objekte zusammenstellen: Ziel(e) + Ablenker (dürfen sich wiederholen, damit das Bild voll wird)
+  const objs = [];
+  for (let i = 0; i < item.targetCount; i++) objs.push({ e: item.target, ok: true });
+  const distinct = shuffle(SEARCH_THEMES[item.theme].filter(e => e !== item.target));
+  for (let i = 0; i < item.total - item.targetCount; i++) objs.push({ e: distinct[i % distinct.length], ok: false });
+  const shuffled = shuffle(objs), pts = scatterPositions(shuffled.length);
+
+  const field = document.createElement("div"); field.className = "seekfield";
+  let remaining = item.targetCount;
+  shuffled.forEach((o, idx) => {
+    const pos = pts[idx];
+    const it = document.createElement("button"); it.className = "seekitem";
+    it.style.left = pos.x + "%"; it.style.top = pos.y + "%";
+    const g = document.createElement("span"); g.className = "glyph"; g.textContent = o.e;
+    g.style.setProperty("--r", pos.r + "deg"); g.style.setProperty("--s", pos.s);
+    it.appendChild(g);
+    it.addEventListener("click", () => {
+      if (locked || it.classList.contains("found")) return;
+      if (o.ok){
+        it.classList.add("found"); playBlip(); remaining--;
+        if (remaining <= 0) searchWin(item, name);
+      } else {
+        statWrong(mode);
+        g.classList.remove("miss"); void g.offsetWidth; g.classList.add("miss");
+        playWrong(); speakEN(pick(["Try again!", "Almost!", "Not that one!"]));
+      }
+    });
+    field.appendChild(it);
+  });
+  el.content.appendChild(field);
+  setTimeout(() => speakEN(prompt), 320);
+}
+function searchWin(item, name){
+  locked = true;
+  score++; lightStars();
+  el.mascot.classList.remove("cheer"); void el.mascot.offsetWidth; el.mascot.classList.add("cheer");
+  playCheer(); confettiBurst();
+  const praise = item.findAll
+    ? (NUMW[item.targetCount] || item.targetCount) + " " + name.toLowerCase() + "s! Well done!"
+    : pick(["Yes! " + name + "!", "Great job!", "Well done! " + name + "!"]);
+  let done = false;
+  const go = () => { if (done) return; done = true; setTimeout(nextQuestion, 700); };
+  speakEN(praise, go);
+  setTimeout(go, 8000);
 }
 
 /* ---------- Malen nach Zahlen (Dschungel-Tiere anmalen) ---------- */
@@ -3404,6 +3515,7 @@ function winRound(){
               : mode === "sounds" ? "Geräusche-Held"
               : mode === "reading" ? "Lese-Held"
               : mode === "maze" ? "Labyrinth-Held"
+              : mode === "search" ? "Such-Held"
               : "Lern-Held";
   el.winText.innerHTML = `Super gemacht!<br>Du bist ein<br>${title}! 🌟`;
   statRound(mode, score);   // Eltern-Statistik: Runde + Sterne
@@ -3418,7 +3530,7 @@ function winRound(){
   playCheer();
   setTimeout(() => { confettiBurst(); confettiBurst(); }, 150);
   if (mode === "english")     setTimeout(() => speakEN("Well done! You are an English hero!"), 400);
-  else if (mode === "shapes") setTimeout(() => speakEN("Well done! Great job!"), 400);
+  else if (mode === "shapes" || mode === "search") setTimeout(() => speakEN("Well done! Great job!"), 400);
   else                        setTimeout(() => speak("Super gemacht! Du bist ein " + title + "!"), 400);
 }
 
