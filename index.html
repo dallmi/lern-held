@@ -79,6 +79,7 @@
   .tile[data-mode="sounds"]   { background: linear-gradient(135deg,#f857a6 0%,#ff5858 100%); }
   .tile[data-mode="subtraction"] { background: linear-gradient(135deg,#fa709a 0%,#fbbf57 100%); }
   .tile[data-mode="reading"]  { background: linear-gradient(135deg,#7367f0 0%,#ce9ffc 100%); }
+  .tile[data-mode="maze"]     { background: linear-gradient(135deg,#11998e 0%,#38ef7d 100%); }
   .tile:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0,0,0,.22); }
   .tile .ico {
     font-size: 10cqw; flex: none; width: 17cqw; height: 17cqw; max-width: 84px; max-height: 84px;
@@ -99,6 +100,7 @@
   .tile[data-mode="sounds"] .ico   { animation-delay: 2.6s; }
   .tile[data-mode="subtraction"] .ico { animation-delay: 2.8s; }
   .tile[data-mode="reading"] .ico  { animation-delay: 3s; }
+  .tile[data-mode="maze"] .ico     { animation-delay: 3.2s; }
   .tile[data-mode="memory"] .ico   { animation-delay: 2s; }
   @keyframes wiggle { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
   .tile .t1 { font-size: 6.4cqw; font-weight: 800; text-shadow: 0 2px 0 rgba(0,0,0,.18); }
@@ -554,6 +556,10 @@
       <button class="tile" data-mode="reading">
         <span class="ico">📖</span>
         <span class="txt"><span class="t1">Lese-Held</span><br><span class="t2">Lies das Wort – finde das Bild!</span></span>
+      </button>
+      <button class="tile" data-mode="maze">
+        <span class="ico">🌀</span>
+        <span class="txt"><span class="t1">Labyrinth-Held</span><br><span class="t2">Bring das Tier mit dem Finger zum Futter!</span></span>
       </button>
       <button class="tile" data-mode="memory">
         <span class="ico">🃏</span>
@@ -1796,6 +1802,7 @@ function startGame(m){
   if (m === "pattern")  queue = makePatternRound(ROUND_LENGTH);
   if (m === "sounds")   queue = shuffle(ANIMAL_SOUNDS).slice(0, ROUND_LENGTH);
   if (m === "reading")  queue = shuffle(READING).slice(0, ROUND_LENGTH);
+  if (m === "maze")     queue = makeMazeRound(ROUND_LENGTH);
   buildStars(queue.length);
   showScreen("game");
   nextQuestion();
@@ -1835,6 +1842,7 @@ function nextQuestion(){
   if (mode === "pattern")   renderPattern(current);
   if (mode === "sounds")    renderSounds(current);
   if (mode === "reading")   renderReading(current);
+  if (mode === "maze")      renderMaze(current);
   setTimeout(askAloud, 350);
 }
 
@@ -2201,6 +2209,149 @@ function onLetterDone(){
     speak(ch.toLowerCase());                                  // nächsten Buchstaben ansagen
     setupTrace(cv, ch, onLetterDone);
   }
+}
+
+/* ---------- Labyrinth-Held (Tier zum Futter führen) ---------- */
+const MAZE_PAIRS = [
+  {a:"🐭",b:"🧀", an:"die Maus",      bn:"zum Käse"},
+  {a:"🐰",b:"🥕", an:"den Hasen",     bn:"zur Karotte"},
+  {a:"🐶",b:"🦴", an:"den Hund",      bn:"zum Knochen"},
+  {a:"🐵",b:"🍌", an:"den Affen",     bn:"zur Banane"},
+  {a:"🐱",b:"🐟", an:"die Katze",     bn:"zum Fisch"},
+  {a:"🐻",b:"🍯", an:"den Bären",     bn:"zum Honig"},
+  {a:"🐧",b:"🐟", an:"den Pinguin",   bn:"zum Fisch"},
+  {a:"🐨",b:"🌿", an:"den Koala",     bn:"zum Blatt"},
+  {a:"🐆",b:"🥩", an:"den Gepard",    bn:"zum Steak"},
+  {a:"🐺",b:"🐷", an:"den Wolf",      bn:"zum Schweinchen"},
+  {a:"🐊",b:"🐠", an:"das Krokodil",  bn:"zum Fisch"},
+];
+/* Eine Runde: 6 Tier-Paare, Gitter wächst 3,3,4,4,5,5 (erst Linie folgen, dann Abzweigungen). */
+function makeMazeRound(n){
+  return shuffle(MAZE_PAIRS).slice(0, n).map((p, i) => ({ pair: p, N: 3 + Math.min(Math.floor(i/2), 2) }));
+}
+/* Perfektes Labyrinth per Recursive-Backtracker (eindeutiger Lösungsweg, Sackgassen entstehen von selbst). */
+const MAZE_DXY = { N:[0,-1], E:[1,0], S:[0,1], W:[-1,0] }, MAZE_OPP = { N:"S", S:"N", E:"W", W:"E" };
+function genMaze(N){
+  const cells = [];
+  for (let y=0;y<N;y++){ const row=[]; for (let x=0;x<N;x++) row.push({x, y, wall:{N:true,E:true,S:true,W:true}, v:false}); cells.push(row); }
+  const stack = [cells[0][0]]; cells[0][0].v = true;
+  while (stack.length){
+    const c = stack[stack.length-1], nb = [];
+    for (const d of ["N","E","S","W"]){
+      const nx=c.x+MAZE_DXY[d][0], ny=c.y+MAZE_DXY[d][1];
+      if (nx>=0 && nx<N && ny>=0 && ny<N && !cells[ny][nx].v) nb.push([d, cells[ny][nx]]);
+    }
+    if (nb.length){ const [d,n] = nb[Math.floor(Math.random()*nb.length)]; c.wall[d]=false; n.wall[MAZE_OPP[d]]=false; n.v=true; stack.push(n); }
+    else stack.pop();
+  }
+  return cells;
+}
+/* Kürzester Weg start->ziel (BFS) als Liste von Zellen. */
+function solveMaze(cells, N){
+  const start=cells[0][0], goal=cells[N-1][N-1], q=[start], prev=new Map([[start,null]]);
+  while (q.length){
+    const c=q.shift(); if (c===goal) break;
+    for (const d of ["N","E","S","W"]){
+      if (c.wall[d]) continue;
+      const n=cells[c.y+MAZE_DXY[d][1]][c.x+MAZE_DXY[d][0]];
+      if (!prev.has(n)){ prev.set(n, c); q.push(n); }
+    }
+  }
+  const path=[]; let c=goal; while (c){ path.unshift(c); c=prev.get(c); } return path;
+}
+function renderMaze(item){
+  const p = item.pair;
+  el.ask.innerHTML = `Bring ${p.a} ➡️ ${p.b}`;
+  const wrap = document.createElement("div"); wrap.className = "tracewrap";
+  const cv = newCanvas(); wrap.appendChild(cv); el.content.appendChild(wrap);
+  setupMaze(cv, item.N, p);
+  setTimeout(() => speak("Bring " + p.an + " " + p.bn + "!"), 250);
+}
+function setupMaze(cv, N, pair){
+  const ctx = cv.getContext("2d");
+  const cells = genMaze(N), path = solveMaze(cells, N);
+  const M = 16, area = 300 - 2*M, cs = area/N;
+  const cx = c => M + c.x*cs + cs/2, cy = c => M + c.y*cs + cs/2;
+  const wps = resample(path.map(c => [cx(c), cy(c)]), cs*0.5);   // dichte Wegpunkte entlang der Lösung
+  const thr = cs*0.6, start = path[0], goal = path[path.length-1];
+  let prog = 0, done = false, drawing = false;
+  const goalX = cx(goal), goalY = cy(goal);
+  function emoji(ch, x, y, scale){
+    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+    ctx.font = Math.round(cs*0.6) + "px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(ch, 0, 0); ctx.restore();
+  }
+  function draw(anim){
+    ctx.clearRect(0,0,300,300);
+    ctx.fillStyle = "#e7f7ec"; ctx.fillRect(M+start.x*cs, M+start.y*cs, cs, cs);
+    ctx.fillStyle = "#fff2dd"; ctx.fillRect(M+goal.x*cs,  M+goal.y*cs,  cs, cs);
+    ctx.strokeStyle = "#1b9e6a"; ctx.lineWidth = Math.max(6, cs*0.14); ctx.lineCap = "round";
+    for (let y=0;y<N;y++) for (let x=0;x<N;x++){
+      const c = cells[y][x], x0=M+x*cs, y0=M+y*cs, x1=x0+cs, y1=y0+cs;
+      ctx.beginPath();
+      if (c.wall.N){ ctx.moveTo(x0,y0); ctx.lineTo(x1,y0); }
+      if (c.wall.S){ ctx.moveTo(x0,y1); ctx.lineTo(x1,y1); }
+      if (c.wall.W){ ctx.moveTo(x0,y0); ctx.lineTo(x0,y1); }
+      if (c.wall.E){ ctx.moveTo(x1,y0); ctx.lineTo(x1,y1); }
+      ctx.stroke();
+    }
+    if (prog > 0){
+      ctx.strokeStyle = "#ff8a3c"; ctx.lineWidth = cs*0.34; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.beginPath();
+      for (let i=0;i<=prog;i++){ const w=wps[i]; i ? ctx.lineTo(w[0],w[1]) : ctx.moveTo(w[0],w[1]); }
+      ctx.stroke();
+    }
+    // Futter am Ziel (schrumpft beim Fressen)
+    const fs = anim ? anim.foodScale : 1;
+    if (fs > 0.02) emoji(pair.b, goalX, goalY, fs);
+    // Tier (läuft beim Sieg zum Ziel + Freudenhüpfer)
+    const ap = anim ? anim.animPos : { x: cx(start), y: cy(start) };
+    emoji(pair.a, ap.x, ap.y, anim ? anim.animScale : 1);
+    // aufsteigende 😋/❤️
+    if (anim && anim.parts) for (const p of anim.parts){
+      ctx.save(); ctx.globalAlpha = Math.max(0, 1 - p.t); emoji(p.e, p.x, p.y, 0.62); ctx.restore();
+    }
+  }
+  draw();
+  function posAt(f){            // Position entlang des Lösungswegs, f = 0..1
+    const idx = Math.max(0, Math.min(1, f)) * (wps.length - 1), i = Math.floor(idx), fr = idx - i;
+    const a = wps[i], b = wps[Math.min(i + 1, wps.length - 1)];
+    return { x: a[0] + (b[0] - a[0]) * fr, y: a[1] + (b[1] - a[1]) * fr };
+  }
+  function eatAnim(){
+    const travel = 520, eat = 520, t0 = performance.now(), parts = [];
+    function frame(now){
+      const e = now - t0;
+      if (e < travel){                                   // Tier hüpft zum Futter
+        const f = e / travel, hop = Math.abs(Math.sin(f * Math.PI * (wps.length))) * 0.12;
+        draw({ animPos: posAt(f), animScale: 1 + hop, foodScale: 1, parts: [] });
+        requestAnimationFrame(frame);
+      } else if (e < travel + eat){                       // Futter wird gefuttert
+        const k = (e - travel) / eat;
+        if (!parts.length) for (let n = 0; n < 5; n++)
+          parts.push({ e: n % 2 ? "❤️" : "😋", x: goalX + (Math.random() - 0.5) * cs * 0.6, y: goalY, vy: -(0.7 + Math.random() * 0.6) });
+        for (const p of parts){ p.y += p.vy * 4; p.t = k; }
+        draw({ animPos: { x: goalX, y: goalY }, animScale: 1 + 0.2 * Math.sin(k * Math.PI * 3), foodScale: Math.max(0, 1 - k * 1.2), parts });
+        requestAnimationFrame(frame);
+      } else {
+        glyphSuccess("Geschafft!");
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  function pos(e){ const r = cv.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*300, y:(e.clientY-r.top)/r.height*300 }; }
+  function advance(p){
+    let moved = false;
+    while (prog < wps.length-1 && Math.hypot(wps[prog+1][0]-p.x, wps[prog+1][1]-p.y) < thr){ prog++; moved = true; }
+    if (moved){ draw(); if (prog >= wps.length-1 && !done){ done = true; setTimeout(eatAnim, 140); } }
+  }
+  function down(e){ if (done) return; e.preventDefault(); drawing = true; try { cv.setPointerCapture(e.pointerId); } catch(x){} advance(pos(e)); }
+  function move(e){ if (!drawing || done) return; e.preventDefault(); advance(pos(e)); }
+  function up(){ drawing = false; }
+  cv.addEventListener("pointerdown", down);
+  cv.addEventListener("pointermove", move);
+  cv.addEventListener("pointerup", up);
+  cv.addEventListener("pointercancel", up);
 }
 
 /* ---------- Malen nach Zahlen (Dschungel-Tiere anmalen) ---------- */
@@ -3252,6 +3403,7 @@ function winRound(){
               : mode === "pattern" ? "Muster-Held"
               : mode === "sounds" ? "Geräusche-Held"
               : mode === "reading" ? "Lese-Held"
+              : mode === "maze" ? "Labyrinth-Held"
               : "Lern-Held";
   el.winText.innerHTML = `Super gemacht!<br>Du bist ein<br>${title}! 🌟`;
   statRound(mode, score);   // Eltern-Statistik: Runde + Sterne
