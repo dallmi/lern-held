@@ -215,19 +215,15 @@
              align-items: center; justify-content: center; overflow: hidden;
              padding: 4px 10px 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
 
-  /* Such-Held (English Wimmelbild) */
-  .seekfield { flex: 1; width: 100%; min-height: 58cqh; position: relative; overflow: hidden;
-               background: rgba(255,255,255,.32); border-radius: 24px; }
+  /* Such-Held (English Wimmelbild – gezeichnete Szenen) */
   .seektarget { font-size: 1.35em; vertical-align: middle; margin-left: .15em; }
-  .seekitem { position: absolute; transform: translate(-50%,-50%); background: none; border: none;
-              padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-  .seekitem .glyph { display: inline-block; line-height: 1; font-size: clamp(26px, 12cqw, 66px);
-                     transform: rotate(var(--r)) scale(var(--s)); transition: opacity .2s; }
-  .seekitem.found { pointer-events: none; }
-  .seekitem.found .glyph { opacity: .45; animation: pop .4s; }
-  .seekitem.found::after { content: "✔"; position: absolute; right: -2px; top: -8px;
-                           font-size: .5em; color: #2bbf8a; -webkit-text-stroke: 2px #fff; font-weight: 900; }
-  .seekitem .glyph.miss { animation: shake .4s; }
+  .seekscene { flex: 1; width: 100%; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .scenesvg { width: 100%; height: 100%; max-height: 100%; border-radius: 20px;
+              box-shadow: 0 6px 0 rgba(0,0,0,.14), 0 9px 16px rgba(0,0,0,.16); }
+  .scenesvg .seekitem { cursor: pointer; transform-box: fill-box; transform-origin: center;
+                        -webkit-tap-highlight-color: transparent; }
+  .scenesvg .seekitem.found { opacity: .72; pointer-events: none; animation: pop .4s; }
+  .scenesvg .seekitem.wob { animation: shake .4s; }
 
   /* Buchstaben-Bühne */
   .stage { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 10px; }
@@ -1808,6 +1804,13 @@ function startGame(m){
     renderPaint(pic);
     return;
   }
+  if (m === "search"){
+    buildStars(ROUND_LENGTH);
+    showScreen("game");
+    el.content.innerHTML = "";
+    startSearchScene();
+    return;
+  }
   if (m === "letters")  queue = shuffle(ANIMAL_WORDS).slice(0, ROUND_LENGTH);
   if (m === "rhyme")    queue = shuffle(RHYMES).slice(0, ROUND_LENGTH);
   if (m === "trace")    queue = shuffle([0,1,2,3,4,5,6,7,8,9]).slice(0, ROUND_LENGTH);
@@ -1823,7 +1826,6 @@ function startGame(m){
   if (m === "sounds")   queue = shuffle(ANIMAL_SOUNDS).slice(0, ROUND_LENGTH);
   if (m === "reading")  queue = shuffle(READING).slice(0, ROUND_LENGTH);
   if (m === "maze")     queue = makeMazeRound(ROUND_LENGTH);
-  if (m === "search")   queue = makeSearchRound(ROUND_LENGTH);
   buildStars(queue.length);
   showScreen("game");
   nextQuestion();
@@ -1864,7 +1866,6 @@ function nextQuestion(){
   if (mode === "sounds")    renderSounds(current);
   if (mode === "reading")   renderReading(current);
   if (mode === "maze")      renderMaze(current);
-  if (mode === "search")    renderSearch(current);
   setTimeout(askAloud, 350);
 }
 
@@ -2376,91 +2377,184 @@ function setupMaze(cv, N, pair){
   cv.addEventListener("pointercancel", up);
 }
 
-/* ---------- Such-Held (English Wimmelbild / I-Spy) ---------- */
-const EMOJI_EN = {}; ENGLISH.forEach(x => EMOJI_EN[x.e] = x.en);
-const SEARCH_THEMES = {
-  Animals: ["🐶","🐱","🐟","🐦","🐮","🐷","🐴","🦆","🐻","🦁","🐘","🐵"],
-  Food:    ["🍎","🍌","🍰","🥚","🥛"],
-  Toys:    ["⚽","🚗","🏠","📖","👟","🎩"],
-  Nature:  ["☀️","⭐","🌙","🌳","🌸"],
-};
+/* ---------- Such-Held (English Wimmelbild – gezeichnete Szenen) ---------- */
 const NUMW = { 1:"One", 2:"Two", 3:"Three", 4:"Four", 5:"Five" };
-/* Eine Runde: abwechselnd "ein Ding" / "alle finden" (garantierter Mix), Objektzahl wächst 8,8,10,10,12,12. */
-function makeSearchRound(n){
-  const order = shuffle(Object.keys(SEARCH_THEMES));
-  const rounds = [];
-  for (let i = 0; i < n; i++){
-    const theme = order[i % order.length], pool = SEARCH_THEMES[theme];
-    const findAll = i % 2 === 1;
-    rounds.push({
-      theme, target: pick(pool), findAll,
-      targetCount: findAll ? (i >= 4 ? 3 : 2) : 1,
-      total: 8 + Math.min(Math.floor(i / 2) * 2, 4),
-    });
-  }
-  return rounds;
-}
-/* Nicht-überlappende Streupositionen in % (Rejection-Sampling) + Drehung/Größe. */
-function scatterPositions(count){
-  const pts = [], minD = 17;
-  for (let i = 0; i < count; i++){
-    let p = null;
-    for (let t = 0; t < 300; t++){
-      const c = { x: 12 + Math.random()*76, y: 12 + Math.random()*76 };
-      if (pts.every(q => Math.hypot(q.x-c.x, q.y-c.y) >= minD)){ p = c; break; }
-    }
-    if (!p) p = { x: 12 + Math.random()*76, y: 12 + Math.random()*76 };
-    p.r = Math.random()*40 - 20; p.s = 0.85 + Math.random()*0.35;
-    pts.push(p);
-  }
-  return pts;
-}
-function renderSearch(item){
-  const name = (EMOJI_EN[item.target] || "it"), low = name.toLowerCase();
-  const prompt = item.findAll ? "Find all the " + low + "s!" : "Find the " + low + "!";
-  el.ask.innerHTML = `🔍 ${prompt} <span class="seektarget">${item.target}</span>`;
-  // Objekte zusammenstellen: Ziel(e) + Ablenker (dürfen sich wiederholen, damit das Bild voll wird)
-  const objs = [];
-  for (let i = 0; i < item.targetCount; i++) objs.push({ e: item.target, ok: true });
-  const distinct = shuffle(SEARCH_THEMES[item.theme].filter(e => e !== item.target));
-  for (let i = 0; i < item.total - item.targetCount; i++) objs.push({ e: distinct[i % distinct.length], ok: false });
-  const shuffled = shuffle(objs), pts = scatterPositions(shuffled.length);
+const SVGNS = "http://www.w3.org/2000/svg";
+function svgEl(name, attrs){ const e = document.createElementNS(SVGNS, name); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; }
 
-  const field = document.createElement("div"); field.className = "seekfield";
-  let remaining = item.targetCount;
-  shuffled.forEach((o, idx) => {
-    const pos = pts[idx];
-    const it = document.createElement("button"); it.className = "seekitem";
-    it.style.left = pos.x + "%"; it.style.top = pos.y + "%";
-    const g = document.createElement("span"); g.className = "glyph"; g.textContent = o.e;
-    g.style.setProperty("--r", pos.r + "deg"); g.style.setProperty("--s", pos.s);
-    it.appendChild(g);
-    it.addEventListener("click", () => {
-      if (locked || it.classList.contains("found")) return;
-      if (o.ok){
-        it.classList.add("found"); playBlip(); remaining--;
-        if (remaining <= 0) searchWin(item, name);
-      } else {
-        statWrong(mode);
-        g.classList.remove("miss"); void g.offsetWidth; g.classList.add("miss");
-        playWrong(); speakEN(pick(["Try again!", "Almost!", "Not that one!"]));
-      }
-    });
-    field.appendChild(it);
-  });
-  el.content.appendChild(field);
-  setTimeout(() => speakEN(prompt), 320);
+/* kleine wiederverwendbare Zeichen-Helfer (zentriert um x,y) */
+const sBird = (x,y) => `<ellipse cx="${x}" cy="${y}" rx="22" ry="14" fill="#5aa9e6"/><circle cx="${x-15}" cy="${y-7}" r="11" fill="#5aa9e6"/><polygon points="${x-25},${y-8} ${x-40},${y-4} ${x-25},${y}" fill="#f5a623"/><circle cx="${x-18}" cy="${y-9}" r="2.6" fill="#1a1a1a"/><path d="M${x-4} ${y-4} q12 -16 24 -1 q-14 6 -24 1 z" fill="#3f8fd0"/>`;
+const sFlower = (x,y,c) => `<rect x="${x-3}" y="${y-2}" width="6" height="34" fill="#3a8f3a"/><circle cx="${x}" cy="${y-13}" r="8" fill="${c}"/><circle cx="${x-12}" cy="${y-2}" r="8" fill="${c}"/><circle cx="${x+12}" cy="${y-2}" r="8" fill="${c}"/><circle cx="${x-7}" cy="${y+10}" r="8" fill="${c}"/><circle cx="${x+7}" cy="${y+10}" r="8" fill="${c}"/><circle cx="${x}" cy="${y-1}" r="7" fill="#ffd23f"/>`;
+const sStarfish = (x,y,c) => `<g transform="translate(${x},${y})"><polygon points="0,-26 7,-7 26,-7 11,5 17,24 0,12 -17,24 -11,5 -26,-7 -7,-7" fill="${c}"/><circle cx="-6" cy="-2" r="2.4" fill="#fff"/><circle cx="6" cy="-2" r="2.4" fill="#fff"/><circle cx="0" cy="8" r="2.4" fill="#fff"/></g>`;
+const sFish = (x,y,c) => `<ellipse cx="${x}" cy="${y}" rx="26" ry="16" fill="${c}"/><polygon points="${x+22},${y} ${x+42},${y-14} ${x+42},${y+14}" fill="${c}"/><circle cx="${x-12}" cy="${y-3}" r="3.2" fill="#1a1a1a"/><path d="M${x-2} ${y-9} q10 9 0 18" stroke="#ffffff" stroke-width="2.5" fill="none" opacity=".6"/>`;
+const sDuck = (x,y) => `<ellipse cx="${x}" cy="${y+6}" rx="30" ry="20" fill="#fff4cf"/><circle cx="${x-22}" cy="${y-12}" r="15" fill="#fff4cf"/><polygon points="${x-36},${y-12} ${x-50},${y-9} ${x-36},${y-5}" fill="#f5a623"/><circle cx="${x-26}" cy="${y-15}" r="2.8" fill="#1a1a1a"/><path d="M${x+10} ${y-2} q22 -8 18 14 q-12 2 -18 -14z" fill="#ffe49a"/>`;
+const sSun = (x,y,r) => `<circle cx="${x}" cy="${y}" r="${r*0.66}" fill="#ffd23f"/><g stroke="#ffd23f" stroke-width="${r*0.12}" stroke-linecap="round"><line x1="${x}" y1="${y-r}" x2="${x}" y2="${y-r*0.84}"/><line x1="${x}" y1="${y+r}" x2="${x}" y2="${y+r*0.84}"/><line x1="${x-r}" y1="${y}" x2="${x-r*0.84}" y2="${y}"/><line x1="${x+r}" y1="${y}" x2="${x+r*0.84}" y2="${y}"/><line x1="${x-r*0.72}" y1="${y-r*0.72}" x2="${x-r*0.6}" y2="${y-r*0.6}"/><line x1="${x+r*0.72}" y1="${y-r*0.72}" x2="${x+r*0.6}" y2="${y-r*0.6}"/><line x1="${x-r*0.72}" y1="${y+r*0.72}" x2="${x-r*0.6}" y2="${y+r*0.6}"/><line x1="${x+r*0.72}" y1="${y+r*0.72}" x2="${x+r*0.6}" y2="${y+r*0.6}"/></g>`;
+const sCloud = (x,y) => `<ellipse cx="${x}" cy="${y}" rx="40" ry="22" fill="#ffffff"/><ellipse cx="${x-26}" cy="${y+8}" rx="24" ry="16" fill="#ffffff"/><ellipse cx="${x+26}" cy="${y+8}" rx="24" ry="16" fill="#ffffff"/>`;
+const sPine = (x,y) => `<rect x="${x-7}" y="${y+26}" width="14" height="24" fill="#7a4a2e"/><polygon points="${x},${y-42} ${x-34},${y+8} ${x+34},${y+8}" fill="#2f8f4e"/><polygon points="${x},${y-18} ${x-30},${y+30} ${x+30},${y+30}" fill="#37a35b"/><polygon points="${x},${y-44} ${x-12},${y-28} ${x+12},${y-28}" fill="#ffffff"/><polygon points="${x},${y-20} ${x-14},${y-2} ${x+14},${y-2}" fill="#eaf6ef"/>`;
+const sApple = (x,y) => `<circle cx="${x}" cy="${y}" r="16" fill="#e24b4a"/><circle cx="${x+6}" cy="${y}" r="13" fill="#e8453c"/><rect x="${x-2}" y="${y-22}" width="4" height="11" rx="2" fill="#7a4a2e"/><path d="M${x+2} ${y-18} q11 -7 15 2 q-9 3 -15 -2z" fill="#3e9c54"/>`;
+const sDog = (x,y) => `<ellipse cx="${x}" cy="${y+16}" rx="52" ry="28" fill="#b07a45"/><circle cx="${x-41}" cy="${y-6}" r="26" fill="#bd8550"/><ellipse cx="${x-59}" cy="${y-20}" rx="9" ry="15" fill="#8a5a2e"/><ellipse cx="${x-23}" cy="${y-20}" rx="9" ry="15" fill="#8a5a2e"/><circle cx="${x-47}" cy="${y-6}" r="3.5" fill="#222"/><circle cx="${x-33}" cy="${y-6}" r="3.5" fill="#222"/><circle cx="${x-41}" cy="${y+5}" r="5" fill="#3a2a1a"/><rect x="${x-15}" y="${y+36}" width="11" height="22" rx="4" fill="#8a5a2e"/><rect x="${x+15}" y="${y+36}" width="11" height="22" rx="4" fill="#8a5a2e"/><path d="M${x+47} ${y+2} q28 -10 20 18" stroke="#8a5a2e" stroke-width="9" fill="none" stroke-linecap="round"/>`;
+
+const SEARCH_SCENES = [
+  {
+    key: "station", title: "Train Station", view: "0 0 1000 720",
+    backdrop:
+      `<rect x="0" y="0" width="1000" height="720" fill="#bfe6f7"/>` +
+      `<ellipse cx="180" cy="120" rx="70" ry="30" fill="#ffffff" opacity=".9"/><ellipse cx="240" cy="135" rx="52" ry="24" fill="#ffffff" opacity=".9"/>` +
+      `<ellipse cx="700" cy="90" rx="64" ry="28" fill="#ffffff" opacity=".85"/>` +
+      `<rect x="0" y="440" width="1000" height="280" fill="#d8c7a2"/>` +
+      `<rect x="0" y="440" width="1000" height="16" fill="#c2af86"/><rect x="0" y="462" width="1000" height="10" fill="#f4c542"/><rect x="0" y="472" width="1000" height="7" fill="#e3b531"/>` +
+      // Bahnhofsgebäude links
+      `<rect x="40" y="232" width="300" height="208" fill="#e3996a"/><polygon points="24,232 356,232 326,188 54,188" fill="#b5563b"/><rect x="40" y="232" width="300" height="16" fill="#c97a4f"/>` +
+      `<rect x="150" y="350" width="70" height="90" fill="#7a4a2e"/><rect x="158" y="358" width="54" height="50" fill="#a9d6e8"/>` +
+      `<rect x="66" y="280" width="56" height="46" fill="#a9d6e8" stroke="#7a4a2e" stroke-width="5"/><rect x="258" y="280" width="56" height="46" fill="#a9d6e8" stroke="#7a4a2e" stroke-width="5"/>` +
+      `<rect x="92" y="206" width="196" height="22" rx="5" fill="#2c5d7c"/><text x="190" y="223" font-size="17" fill="#fff" text-anchor="middle" font-family="Comic Sans MS, sans-serif" font-weight="bold">STATION</text>` +
+      // Zug rechts
+      `<rect x="600" y="300" width="400" height="150" rx="16" fill="#e2554e"/><rect x="620" y="320" width="56" height="50" rx="7" fill="#bfe6f7" stroke="#9c2f2a" stroke-width="5"/><rect x="700" y="320" width="56" height="50" rx="7" fill="#bfe6f7" stroke="#9c2f2a" stroke-width="5"/><rect x="780" y="320" width="56" height="50" rx="7" fill="#bfe6f7" stroke="#9c2f2a" stroke-width="5"/><rect x="860" y="320" width="56" height="50" rx="7" fill="#bfe6f7" stroke="#9c2f2a" stroke-width="5"/><rect x="600" y="404" width="400" height="16" fill="#f4c542"/><circle cx="660" cy="452" r="22" fill="#333"/><circle cx="660" cy="452" r="9" fill="#888"/><circle cx="840" cy="452" r="22" fill="#333"/><circle cx="840" cy="452" r="9" fill="#888"/>` +
+      // Laternenpfahl
+      `<rect x="476" y="330" width="10" height="120" fill="#5a5a5a"/><rect x="430" y="318" width="102" height="16" rx="4" fill="#5a5a5a"/>`,
+    items: [
+      { en: "Sun", emoji: "☀️", spots: [ { cx: 912, cy: 96, r: 60, g: `<circle cx="912" cy="96" r="40" fill="#ffd23f"/><g stroke="#ffd23f" stroke-width="7" stroke-linecap="round"><line x1="912" y1="36" x2="912" y2="14"/><line x1="912" y1="156" x2="912" y2="178"/><line x1="852" y1="96" x2="830" y2="96"/><line x1="972" y1="96" x2="994" y2="96"/><line x1="869" y1="53" x2="853" y2="37"/><line x1="955" y1="53" x2="971" y2="37"/><line x1="869" y1="139" x2="853" y2="155"/><line x1="955" y1="139" x2="971" y2="155"/></g>` } ] },
+      { en: "Bird", emoji: "🐦", spots: [ { cx: 330, cy: 150, r: 46, g: sBird(330,150) }, { cx: 560, cy: 112, r: 46, g: sBird(560,112) }, { cx: 455, cy: 210, r: 46, g: sBird(455,210) } ] },
+      { en: "Clock", emoji: "🕐", spots: [ { cx: 190, cy: 250, r: 42, g: `<circle cx="190" cy="250" r="34" fill="#fff8e7" stroke="#7a4a2e" stroke-width="6"/><line x1="190" y1="250" x2="190" y2="228" stroke="#333" stroke-width="4" stroke-linecap="round"/><line x1="190" y1="250" x2="206" y2="258" stroke="#333" stroke-width="4" stroke-linecap="round"/><circle cx="190" cy="250" r="4" fill="#333"/>` } ] },
+      { en: "Balloon", emoji: "🎈", spots: [ { cx: 95, cy: 490, r: 50, g: `<ellipse cx="95" cy="478" rx="34" ry="40" fill="#e2554e"/><polygon points="88,516 102,516 95,524" fill="#e2554e"/><path d="M95 524 q12 30 -4 56" stroke="#7a4a2e" stroke-width="3" fill="none"/>` } ] },
+      { en: "Dog", emoji: "🐶", spots: [ { cx: 165, cy: 612, r: 68, g: `<ellipse cx="165" cy="628" rx="52" ry="28" fill="#b07a45"/><circle cx="124" cy="606" r="26" fill="#bd8550"/><ellipse cx="106" cy="592" rx="9" ry="15" fill="#8a5a2e"/><ellipse cx="142" cy="592" rx="9" ry="15" fill="#8a5a2e"/><circle cx="118" cy="606" r="3.5" fill="#222"/><circle cx="132" cy="606" r="3.5" fill="#222"/><circle cx="124" cy="617" r="5" fill="#3a2a1a"/><rect x="150" y="648" width="11" height="22" rx="4" fill="#8a5a2e"/><rect x="180" y="648" width="11" height="22" rx="4" fill="#8a5a2e"/><path d="M212 614 q28 -10 20 18" stroke="#8a5a2e" stroke-width="9" fill="none" stroke-linecap="round"/>` } ] },
+      { en: "Cat", emoji: "🐱", spots: [ { cx: 880, cy: 612, r: 62, g: `<ellipse cx="880" cy="628" rx="46" ry="26" fill="#9aa0a6"/><circle cx="880" cy="600" r="26" fill="#9aa0a6"/><polygon points="860,582 866,558 878,580" fill="#9aa0a6"/><polygon points="900,582 894,558 882,580" fill="#9aa0a6"/><circle cx="872" cy="600" r="3.6" fill="#2a2a2a"/><circle cx="888" cy="600" r="3.6" fill="#2a2a2a"/><path d="M876 610 l4 4 l4 -4" stroke="#2a2a2a" stroke-width="2.5" fill="none"/><path d="M906 632 q30 -6 18 -30" stroke="#9aa0a6" stroke-width="11" fill="none" stroke-linecap="round"/>` } ] },
+      { en: "Ball", emoji: "⚽", spots: [ { cx: 430, cy: 664, r: 46, g: `<circle cx="430" cy="664" r="34" fill="#ffffff" stroke="#333" stroke-width="3"/><polygon points="430,648 442,658 437,672 423,672 418,658" fill="#333"/>` } ] },
+      { en: "Hat", emoji: "🎩", spots: [ { cx: 640, cy: 648, r: 44, g: `<rect x="606" y="666" width="68" height="10" rx="5" fill="#2c2c2a"/><rect x="618" y="624" width="44" height="44" rx="4" fill="#2c2c2a"/><rect x="618" y="654" width="44" height="9" fill="#9c2f2a"/>` } ] },
+      { en: "Cup", emoji: "☕", spots: [ { cx: 772, cy: 660, r: 40, g: `<path d="M748 644 h40 v20 a16 16 0 0 1 -40 0 z" fill="#fff" stroke="#7a4a2e" stroke-width="3"/><path d="M788 648 q16 0 16 12 q0 12 -16 12" fill="none" stroke="#7a4a2e" stroke-width="3"/><rect x="746" y="636" width="44" height="8" rx="4" fill="#c97a4f"/>` } ] },
+      { en: "Flower", emoji: "🌸", spots: [ { cx: 300, cy: 690, r: 38, g: sFlower(300,684,"#ff6fb5") }, { cx: 560, cy: 694, r: 38, g: sFlower(560,688,"#ff8a3c") }, { cx: 820, cy: 690, r: 38, g: sFlower(820,684,"#d65a9e") } ] },
+    ],
+  },
+  {
+    key: "ski", title: "Ski Slope", view: "0 0 1000 720",
+    backdrop:
+      `<rect x="0" y="0" width="1000" height="720" fill="#c7e9f7"/>` +
+      `<polygon points="-20,400 210,150 440,400" fill="#a9c8de"/><polygon points="320,400 580,170 840,400" fill="#bcd6e8"/><polygon points="640,400 880,190 1060,400" fill="#a9c8de"/>` +
+      `<polygon points="172,210 210,150 248,210" fill="#ffffff"/><polygon points="542,230 580,170 618,230" fill="#ffffff"/><polygon points="842,250 880,190 918,250" fill="#ffffff"/>` +
+      `<rect x="0" y="360" width="1000" height="360" fill="#f2fafe"/><path d="M0 470 q500 60 1000 0 v260 h-1000 z" fill="#e8f4fb"/>` +
+      `<line x1="120" y1="300" x2="900" y2="170" stroke="#888" stroke-width="4"/><rect x="300" y="266" width="9" height="100" fill="#888"/><rect x="660" y="220" width="9" height="146" fill="#888"/><rect x="500" y="232" width="46" height="34" rx="7" fill="#e2554e"/><rect x="519" y="226" width="8" height="8" fill="#888"/>`,
+    items: [
+      { en: "Sun", emoji: "☀️", spots: [ { cx: 905, cy: 110, r: 58, g: sSun(905,110,58) } ] },
+      { en: "Cloud", emoji: "☁️", spots: [ { cx: 180, cy: 150, r: 48, g: sCloud(180,150) }, { cx: 720, cy: 120, r: 48, g: sCloud(720,120) } ] },
+      { en: "Bird", emoji: "🐦", spots: [ { cx: 340, cy: 180, r: 44, g: sBird(340,180) }, { cx: 540, cy: 150, r: 44, g: sBird(540,150) } ] },
+      { en: "Snowman", emoji: "⛄", spots: [ { cx: 200, cy: 525, r: 80, g: `<g><circle cx="200" cy="572" r="42" fill="#ffffff" stroke="#d4e6f0" stroke-width="3"/><circle cx="200" cy="514" r="30" fill="#ffffff" stroke="#d4e6f0" stroke-width="3"/><circle cx="192" cy="509" r="3.6" fill="#333"/><circle cx="208" cy="509" r="3.6" fill="#333"/><polygon points="200,516 226,520 200,524" fill="#ff9f1c"/><circle cx="200" cy="560" r="3" fill="#333"/><circle cx="200" cy="576" r="3" fill="#333"/><rect x="174" y="478" width="52" height="8" fill="#9c2f2a"/><rect x="184" y="456" width="32" height="24" fill="#9c2f2a"/><line x1="158" y1="516" x2="120" y2="496" stroke="#8a5a2e" stroke-width="4" stroke-linecap="round"/><line x1="242" y1="516" x2="280" y2="496" stroke="#8a5a2e" stroke-width="4" stroke-linecap="round"/></g>` } ] },
+      { en: "Skier", emoji: "⛷️", spots: [ { cx: 650, cy: 560, r: 64, g: `<g transform="translate(650,560)"><line x1="-36" y1="36" x2="46" y2="22" stroke="#3a6ea5" stroke-width="6" stroke-linecap="round"/><line x1="-32" y1="46" x2="50" y2="32" stroke="#3a6ea5" stroke-width="6" stroke-linecap="round"/><line x1="-6" y1="12" x2="-20" y2="42" stroke="#2b5a86" stroke-width="8" stroke-linecap="round"/><line x1="8" y1="12" x2="26" y2="36" stroke="#2b5a86" stroke-width="8" stroke-linecap="round"/><rect x="-13" y="-22" width="26" height="36" rx="9" fill="#f0a93c"/><line x1="-10" y1="-8" x2="-32" y2="16" stroke="#e08a1c" stroke-width="6" stroke-linecap="round"/><line x1="-32" y1="16" x2="-32" y2="46" stroke="#777" stroke-width="3"/><circle cx="0" cy="-34" r="14" fill="#f6c79a"/><path d="M-14 -36 a14 13 0 0 1 28 0 z" fill="#e24b4a"/><circle cx="-2" cy="-34" r="2.6" fill="#222"/></g>` } ] },
+      { en: "Tree", emoji: "🌲", spots: [ { cx: 430, cy: 440, r: 52, g: sPine(430,440) }, { cx: 580, cy: 520, r: 52, g: sPine(580,520) }, { cx: 830, cy: 470, r: 52, g: sPine(830,470) } ] },
+      { en: "Hat", emoji: "🧢", spots: [ { cx: 380, cy: 596, r: 42, g: `<ellipse cx="380" cy="596" rx="26" ry="24" fill="#3aa66f"/><rect x="350" y="598" width="60" height="12" rx="6" fill="#2c7d54"/><circle cx="380" cy="572" r="9" fill="#ffffff"/>` } ] },
+      { en: "Flag", emoji: "🚩", spots: [ { cx: 778, cy: 588, r: 46, g: `<rect x="767" y="556" width="6" height="70" fill="#5a5a5a"/><polygon points="773,558 812,569 773,584" fill="#e24b4a"/>` } ] },
+      { en: "Dog", emoji: "🐶", spots: [ { cx: 880, cy: 590, r: 58, g: sDog(880,590) } ] },
+    ],
+  },
+  {
+    key: "beach", title: "Beach", view: "0 0 1000 720",
+    backdrop:
+      `<rect x="0" y="0" width="1000" height="400" fill="#bfe6f7"/>` +
+      `<rect x="0" y="380" width="1000" height="160" fill="#3aa6c9"/>` +
+      `<path d="M0 396 q50 -12 100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0 t100 0" stroke="#7fcde0" stroke-width="4" fill="none"/>` +
+      `<rect x="0" y="528" width="1000" height="192" fill="#f3dca0"/><rect x="0" y="528" width="1000" height="10" fill="#e6c987"/>`,
+    items: [
+      { en: "Sun", emoji: "☀️", spots: [ { cx: 905, cy: 100, r: 58, g: sSun(905,100,58) } ] },
+      { en: "Bird", emoji: "🐦", spots: [ { cx: 300, cy: 150, r: 44, g: sBird(300,150) }, { cx: 640, cy: 120, r: 44, g: sBird(640,120) } ] },
+      { en: "Tree", emoji: "🌴", spots: [ { cx: 110, cy: 470, r: 64, g: `<g transform="translate(110,500)"><path d="M-4 60 q-6 -60 2 -120" stroke="#9c6b3f" stroke-width="14" fill="none"/><path d="M0 -64 q-40 -22 -72 -6 q34 -8 70 14z" fill="#37a35b"/><path d="M0 -64 q40 -22 72 -6 q-34 -8 -70 14z" fill="#2f8f4e"/><path d="M0 -64 q-20 -44 -54 -52 q22 16 46 62z" fill="#43b047"/><path d="M0 -64 q20 -44 54 -52 q-22 16 -46 62z" fill="#37a35b"/><circle cx="-6" cy="-52" r="6" fill="#9c6b3f"/><circle cx="6" cy="-52" r="6" fill="#7a4a2e"/></g>` } ] },
+      { en: "Boat", emoji: "⛵", spots: [ { cx: 490, cy: 345, r: 72, g: `<g><rect x="477" y="298" width="6" height="78" fill="#7a4a2e"/><polygon points="483,300 483,372 548,372" fill="#ffffff"/><polygon points="473,312 473,372 430,372" fill="#e24b4a"/><path d="M432 376 h116 l-16 26 h-84 z" fill="#9c2f2a"/></g>` } ] },
+      { en: "Fish", emoji: "🐟", spots: [ { cx: 250, cy: 440, r: 46, g: sFish(250,440,"#ff9f1c") }, { cx: 520, cy: 472, r: 46, g: sFish(520,472,"#e24b4a") }, { cx: 760, cy: 440, r: 46, g: sFish(760,440,"#9b5de5") } ] },
+      { en: "Crab", emoji: "🦀", spots: [ { cx: 250, cy: 608, r: 56, g: `<g><ellipse cx="250" cy="612" rx="30" ry="22" fill="#e24b4a"/><circle cx="240" cy="600" r="4" fill="#fff"/><circle cx="260" cy="600" r="4" fill="#fff"/><circle cx="240" cy="600" r="2" fill="#222"/><circle cx="260" cy="600" r="2" fill="#222"/><circle cx="200" cy="590" r="8" fill="#e24b4a"/><circle cx="300" cy="590" r="8" fill="#e24b4a"/><path d="M222 606 q-18 -2 -22 -16" stroke="#c43b3a" stroke-width="6" fill="none"/><path d="M278 606 q18 -2 22 -16" stroke="#c43b3a" stroke-width="6" fill="none"/><g stroke="#c43b3a" stroke-width="5"><line x1="226" y1="624" x2="210" y2="638"/><line x1="240" y1="630" x2="232" y2="646"/><line x1="260" y1="630" x2="268" y2="646"/><line x1="274" y1="624" x2="290" y2="638"/></g></g>` } ] },
+      { en: "Star", emoji: "⭐", spots: [ { cx: 430, cy: 650, r: 40, g: sStarfish(430,650,"#ff9f1c") } ] },
+      { en: "Bucket", emoji: "🪣", spots: [ { cx: 620, cy: 640, r: 42, g: `<g><path d="M596 624 h48 l-6 38 h-36 z" fill="#f0a93c"/><rect x="592" y="618" width="56" height="9" rx="4" fill="#d98a1c"/><path d="M598 622 q22 -24 44 0" stroke="#d98a1c" stroke-width="4" fill="none"/></g>` } ] },
+      { en: "Ball", emoji: "⚽", spots: [ { cx: 770, cy: 620, r: 44, g: `<g><circle cx="770" cy="620" r="30" fill="#ffffff" stroke="#ddd" stroke-width="2"/><path d="M770 590 a30 30 0 0 1 26 15 l-26 15 z" fill="#e24b4a"/><path d="M796 605 a30 30 0 0 1 0 30 l-26 -15 z" fill="#3aa6c9"/><path d="M770 650 a30 30 0 0 1 -26 -15 l26 -15 z" fill="#ffd23f"/><path d="M744 635 a30 30 0 0 1 0 -30 l26 15 z" fill="#43b047"/></g>` } ] },
+    ],
+  },
+  {
+    key: "farm", title: "Farm", view: "0 0 1000 720",
+    backdrop:
+      `<rect x="0" y="0" width="1000" height="720" fill="#bfe6f7"/>` +
+      `<rect x="0" y="400" width="1000" height="320" fill="#8fce6b"/><ellipse cx="800" cy="432" rx="320" ry="60" fill="#7bbd57"/><rect x="0" y="400" width="1000" height="12" fill="#7bbd57"/>` +
+      `<rect x="700" y="250" width="240" height="170" fill="#c0392b"/><polygon points="690,250 950,250 920,196 720,196" fill="#9c2f2a"/><rect x="784" y="320" width="72" height="100" fill="#e6b07a"/><path d="M784 320 v100 M856 320 v100 M784 370 h72" stroke="#9c2f2a" stroke-width="5"/><rect x="724" y="276" width="48" height="40" fill="#e6b07a"/>` +
+      `<rect x="556" y="328" width="22" height="94" fill="#7a4a2e"/><circle cx="567" cy="300" r="62" fill="#3e9c54"/><circle cx="528" cy="322" r="40" fill="#37a35b"/><circle cx="606" cy="322" r="40" fill="#37a35b"/>` +
+      `<ellipse cx="470" cy="652" rx="130" ry="40" fill="#5fb3d6"/>`,
+    items: [
+      { en: "Sun", emoji: "☀️", spots: [ { cx: 120, cy: 112, r: 56, g: sSun(120,112,56) } ] },
+      { en: "Apple", emoji: "🍎", spots: [ { cx: 540, cy: 300, r: 34, g: sApple(540,300) }, { cx: 596, cy: 318, r: 34, g: sApple(596,318) } ] },
+      { en: "Cow", emoji: "🐮", spots: [ { cx: 290, cy: 558, r: 74, g: `<g><ellipse cx="300" cy="566" rx="56" ry="34" fill="#ffffff"/><ellipse cx="278" cy="556" rx="16" ry="12" fill="#3a3a3a"/><ellipse cx="326" cy="578" rx="14" ry="10" fill="#3a3a3a"/><rect x="270" y="596" width="12" height="26" rx="4" fill="#d9d2c4"/><rect x="318" y="596" width="12" height="26" rx="4" fill="#d9d2c4"/><circle cx="246" cy="540" r="26" fill="#ffffff"/><ellipse cx="232" cy="556" rx="16" ry="12" fill="#f2b8c6"/><circle cx="238" cy="534" r="3.5" fill="#222"/><circle cx="254" cy="534" r="3.5" fill="#222"/><polygon points="226,520 220,508 234,516" fill="#caa15a"/><polygon points="266,520 272,508 258,516" fill="#caa15a"/><path d="M356 552 q22 6 12 30" stroke="#d9d2c4" stroke-width="5" fill="none"/></g>` } ] },
+      { en: "Horse", emoji: "🐴", spots: [ { cx: 884, cy: 542, r: 62, g: `<g><ellipse cx="890" cy="556" rx="48" ry="30" fill="#a9713f"/><rect x="868" y="582" width="12" height="30" rx="4" fill="#8a5a2e"/><rect x="906" y="582" width="12" height="30" rx="4" fill="#8a5a2e"/><path d="M848 540 q-22 -6 -26 -34 q14 18 30 22z" fill="#a9713f"/><circle cx="828" cy="512" r="18" fill="#b97c46"/><polygon points="820,496 816,484 828,492" fill="#a9713f"/><polygon points="836,494 842,482 844,496" fill="#a9713f"/><circle cx="820" cy="510" r="3" fill="#222"/><path d="M846 528 q-10 -20 -22 -28" stroke="#5a3a1e" stroke-width="6" fill="none"/><path d="M930 548 q22 6 14 34" stroke="#5a3a1e" stroke-width="7" fill="none"/></g>` } ] },
+      { en: "Pig", emoji: "🐷", spots: [ { cx: 760, cy: 596, r: 58, g: `<g><ellipse cx="770" cy="600" rx="44" ry="30" fill="#f4a6c0"/><circle cx="734" cy="586" r="24" fill="#f4a6c0"/><ellipse cx="724" cy="590" rx="13" ry="10" fill="#ec88a8"/><circle cx="720" cy="588" r="2.6" fill="#5a2a3a"/><circle cx="728" cy="588" r="2.6" fill="#5a2a3a"/><polygon points="720,566 714,552 730,560" fill="#f4a6c0"/><polygon points="748,566 754,552 738,560" fill="#f4a6c0"/><circle cx="726" cy="590" r="3.4" fill="#ec88a8"/><rect x="752" y="624" width="11" height="20" rx="4" fill="#ec88a8"/><rect x="784" y="624" width="11" height="20" rx="4" fill="#ec88a8"/><path d="M812 596 q16 -4 10 -18 q-2 14 -10 8" stroke="#ec88a8" stroke-width="4" fill="none"/></g>` } ] },
+      { en: "Chicken", emoji: "🐔", spots: [ { cx: 160, cy: 626, r: 46, g: `<g><ellipse cx="160" cy="632" rx="30" ry="26" fill="#ffffff"/><circle cx="150" cy="606" r="16" fill="#ffffff"/><path d="M142 592 q5 -10 10 -2 q5 -10 10 0 q4 -8 8 2z" fill="#e24b4a"/><polygon points="134,606 120,604 134,612" fill="#ff9f1c"/><circle cx="146" cy="604" r="2.6" fill="#222"/><path d="M186 626 q22 -6 14 -26 q-2 18 -14 14z" fill="#eaeaea"/><rect x="150" y="656" width="6" height="12" fill="#ff9f1c"/><rect x="166" y="656" width="6" height="12" fill="#ff9f1c"/></g>` } ] },
+      { en: "Duck", emoji: "🦆", spots: [ { cx: 400, cy: 646, r: 40, g: sDuck(400,646) }, { cx: 492, cy: 656, r: 40, g: sDuck(492,656) }, { cx: 562, cy: 646, r: 40, g: sDuck(562,646) } ] },
+      { en: "Dog", emoji: "🐶", spots: [ { cx: 650, cy: 590, r: 56, g: sDog(650,590) } ] },
+      { en: "Flower", emoji: "🌸", spots: [ { cx: 250, cy: 694, r: 38, g: sFlower(250,688,"#ff6fb5") }, { cx: 660, cy: 696, r: 38, g: sFlower(660,690,"#9b5de5") }, { cx: 850, cy: 694, r: 38, g: sFlower(850,688,"#ff8a3c") } ] },
+    ],
+  },
+];
+
+let searchScene = null, searchTasks = [], searchTaskIdx = 0, searchRemaining = 0;
+
+function startSearchScene(){
+  score = 0;
+  let idx = 0;
+  try { idx = parseInt(localStorage.getItem("lernheld-searchscene") || "0", 10) % SEARCH_SCENES.length; } catch (e) {}
+  if (isNaN(idx) || idx < 0) idx = 0;
+  try { localStorage.setItem("lernheld-searchscene", String((idx + 1) % SEARCH_SCENES.length)); } catch (e) {}
+  searchScene = SEARCH_SCENES[idx];
+
+  let svg = `<svg viewBox="${searchScene.view}" class="scenesvg" preserveAspectRatio="xMidYMid meet">` + searchScene.backdrop;
+  searchScene.items.forEach((it, ii) => it.spots.forEach((sp, si) => {
+    svg += `<g class="seekitem" data-en="${it.en}" data-i="${ii}" data-s="${si}"><circle cx="${sp.cx}" cy="${sp.cy}" r="${sp.r}" fill="transparent" pointer-events="all"/>${sp.g}</g>`;
+  }));
+  svg += `</svg>`;
+  const wrap = document.createElement("div"); wrap.className = "seekscene"; wrap.innerHTML = svg;
+  el.content.appendChild(wrap);
+  wrap.querySelectorAll(".seekitem").forEach(g => g.addEventListener("click", () => onSearchTap(g)));
+
+  // 6 Aufträge aus den Szenen-Objekten: einfache (1x) zuerst, "alle finden" später
+  searchTasks = shuffle(searchScene.items.slice()).slice(0, ROUND_LENGTH)
+    .sort((a, b) => a.spots.length - b.spots.length)
+    .map(it => ({ en: it.en, emoji: it.emoji, count: it.spots.length, findAll: it.spots.length > 1 }));
+  runSearchTask(0);
 }
-function searchWin(item, name){
+function runSearchTask(i){
+  if (i >= searchTasks.length){ winRound(); return; }
+  searchTaskIdx = i; locked = false;
+  const t = searchTasks[i]; searchRemaining = t.count;
+  const low = t.en.toLowerCase();
+  const prompt = t.findAll ? "Find all the " + low + "s!" : "Find the " + low + "!";
+  el.ask.innerHTML = `🔍 ${prompt} <span class="seektarget">${t.emoji}</span>`;
+  setTimeout(() => speakEN(prompt), 260);
+}
+function onSearchTap(g){
+  if (locked || g.classList.contains("found")) return;
+  const t = searchTasks[searchTaskIdx];
+  if (g.dataset.en === t.en){
+    markSeekFound(g); playBlip(); searchRemaining--;
+    if (searchRemaining <= 0) searchTaskDone(t);
+  } else {
+    statWrong(mode);
+    g.classList.remove("wob"); void g.getBBox(); g.classList.add("wob");
+    playWrong(); speakEN(pick(["Try again!", "Almost!", "Not that one!"]));
+  }
+}
+function markSeekFound(g){
+  g.classList.add("found");
+  const hit = g.querySelector("circle");
+  const cx = +hit.getAttribute("cx"), cy = +hit.getAttribute("cy"), r = +hit.getAttribute("r");
+  const ccx = cx + r * 0.55, ccy = cy - r * 0.55, cr = Math.max(13, r * 0.32);
+  const grp = svgEl("g", { class: "seekcheck" });
+  grp.appendChild(svgEl("circle", { cx: ccx, cy: ccy, r: cr, fill: "#2bbf8a", stroke: "#fff", "stroke-width": 3 }));
+  grp.appendChild(svgEl("path", {
+    d: `M ${ccx - cr*0.45} ${ccy} l ${cr*0.35} ${cr*0.4} l ${cr*0.6} ${-cr*0.7}`,
+    fill: "none", stroke: "#fff", "stroke-width": Math.max(3, cr*0.28), "stroke-linecap": "round", "stroke-linejoin": "round",
+  }));
+  g.appendChild(grp);
+}
+function searchTaskDone(t){
   locked = true;
   score++; lightStars();
   el.mascot.classList.remove("cheer"); void el.mascot.offsetWidth; el.mascot.classList.add("cheer");
   playCheer(); confettiBurst();
-  const praise = item.findAll
-    ? (NUMW[item.targetCount] || item.targetCount) + " " + name.toLowerCase() + "s! Well done!"
-    : pick(["Yes! " + name + "!", "Great job!", "Well done! " + name + "!"]);
+  const praise = t.findAll
+    ? (NUMW[t.count] || t.count) + " " + t.en.toLowerCase() + "s! Well done!"
+    : pick(["Yes! " + t.en + "!", "Great job!", "Well done! " + t.en + "!"]);
   let done = false;
-  const go = () => { if (done) return; done = true; setTimeout(nextQuestion, 700); };
+  const go = () => { if (done) return; done = true; setTimeout(() => runSearchTask(searchTaskIdx + 1), 750); };
   speakEN(praise, go);
   setTimeout(go, 8000);
 }
