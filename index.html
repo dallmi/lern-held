@@ -80,6 +80,8 @@
   .tile[data-mode="subtraction"] { background: linear-gradient(135deg,#fa709a 0%,#fbbf57 100%); }
   .tile[data-mode="reading"]  { background: linear-gradient(135deg,#7367f0 0%,#ce9ffc 100%); }
   .tile[data-mode="maze"]     { background: linear-gradient(135deg,#11998e 0%,#38ef7d 100%); }
+  .tile[data-mode="mazexl"]   { background: linear-gradient(135deg,#0b6e4f 0%,#1b9e6a 100%); }
+  .tile[data-mode="walk"]     { background: linear-gradient(135deg,#654ea3 0%,#da6cae 100%); }
   .tile[data-mode="search"]   { background: linear-gradient(135deg,#00b4db 0%,#0083b0 100%); }
   .tile:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0,0,0,.22); }
   .tile .ico {
@@ -102,6 +104,8 @@
   .tile[data-mode="subtraction"] .ico { animation-delay: 2.8s; }
   .tile[data-mode="reading"] .ico  { animation-delay: 3s; }
   .tile[data-mode="maze"] .ico     { animation-delay: 3.2s; }
+  .tile[data-mode="mazexl"] .ico   { animation-delay: 3.6s; }
+  .tile[data-mode="walk"] .ico     { animation-delay: 4s; }
   .tile[data-mode="search"] .ico   { animation-delay: 3.4s; }
   .tile[data-mode="memory"] .ico   { animation-delay: 2s; }
   @keyframes wiggle { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
@@ -224,6 +228,37 @@
                         -webkit-tap-highlight-color: transparent; }
   .scenesvg .seekitem.found { opacity: .72; pointer-events: none; animation: pop .4s; }
   .scenesvg .seekitem.wob { animation: shake .4s; }
+
+  /* Irrgarten (frei laufen mit Pfeilen/Wischen) */
+  .walkwrap { width: 100%; height: 100%; display: flex; flex-direction: column;
+              align-items: center; justify-content: center; gap: 2cqh; }
+  .walkboard { width: min(86cqw, 38cqh); height: min(86cqw, 38cqh); border-radius: 14px;
+               overflow: hidden; background: #fff; touch-action: none;
+               box-shadow: 0 8px 18px rgba(0,0,0,.22); }
+  .walkboard.bump { animation: wbump .22s; }
+  @keyframes wbump { 25%{ transform: translateX(-5px); } 75%{ transform: translateX(5px); } }
+  .walksvg { display: block; width: 100%; height: 100%; }
+  .wfloor { fill: var(--fc); }
+  .wstart { fill: var(--sc); }
+  .wwall  { fill: none; stroke: var(--wc); stroke-width: 0.14; stroke-linecap: round; stroke-linejoin: round; }
+  .wtrail { fill: var(--wc); opacity: .15; }
+  .wglyph { font-size: 0.66px; }
+  #walkHero, .walkfood, .wpop { transform-box: view-box; }
+  #walkHero { transition: transform .13s ease; }
+  .walkfood { transition: opacity .25s ease; }
+  .walkfood.eaten { opacity: 0; }
+  .wpop { font-size: 0.5px; pointer-events: none; animation: wpopf .76s ease-out forwards; }
+  @keyframes wpopf { to { transform: translateY(-0.7px); opacity: 0; } }
+  .dpad { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 1.2cqh; }
+  .dbtn { width: min(16cqw, 8.2cqh); height: min(16cqw, 8.2cqh); border: none; border-radius: 24%;
+          cursor: pointer; font-size: min(8cqw, 4.4cqh); line-height: 1; color: #1c3b1a;
+          background: rgba(255,255,255,.94); box-shadow: 0 5px 0 rgba(0,0,0,.18);
+          display: flex; align-items: center; justify-content: center; }
+  .dbtn:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,.18); }
+  .dbtn.up    { grid-column: 2; grid-row: 1; }
+  .dbtn.left  { grid-column: 1; grid-row: 2; }
+  .dbtn.right { grid-column: 3; grid-row: 2; }
+  .dbtn.down  { grid-column: 2; grid-row: 3; }
 
   /* Buchstaben-Bühne */
   .stage { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 2px 0 10px; }
@@ -482,6 +517,10 @@
     .mcard .back { font-size: 8cqh; }
     .mcard .front { font-size: 12cqh; }
 
+    /* Irrgarten quer: Brett an die Höhe koppeln, Steuerung kompakter */
+    .walkboard { width: min(38cqw, 46cqh); height: min(38cqw, 46cqh); }
+    .dbtn { width: min(9cqw, 9.5cqh); height: min(9cqw, 9.5cqh); font-size: min(5cqw, 5.5cqh); }
+
     /* Gewinn-Screen: kompakter + scrollbar, sonst werden quer die unteren Buttons abgeschnitten */
     #win { overflow-y: auto; justify-content: safe center; padding-top: 14px; padding-bottom: 14px; }
     #win .trophy { font-size: 15cqh; }
@@ -572,6 +611,14 @@
       <button class="tile" data-mode="maze">
         <span class="ico">🌀</span>
         <span class="txt"><span class="t1">Labyrinth-Held</span><br><span class="t2">Bring das Tier mit dem Finger zum Futter!</span></span>
+      </button>
+      <button class="tile" data-mode="mazexl">
+        <span class="ico">🧭</span>
+        <span class="txt"><span class="t1">Großes Labyrinth</span><br><span class="t2">Größer &amp; kniffliger – mit dem Finger!</span></span>
+      </button>
+      <button class="tile" data-mode="walk">
+        <span class="ico">🕹️</span>
+        <span class="txt"><span class="t1">Irrgarten</span><br><span class="t2">Lauf mit den Pfeilen zum Futter!</span></span>
       </button>
       <button class="tile" data-mode="search">
         <span class="ico">🔍</span>
@@ -1826,6 +1873,8 @@ function startGame(m){
   if (m === "sounds")   queue = shuffle(ANIMAL_SOUNDS).slice(0, ROUND_LENGTH);
   if (m === "reading")  queue = shuffle(READING).slice(0, ROUND_LENGTH);
   if (m === "maze")     queue = makeMazeRound(ROUND_LENGTH);
+  if (m === "mazexl")   queue = makeMazeXLRound(ROUND_LENGTH);
+  if (m === "walk")     queue = makeWalkRound(ROUND_LENGTH);
   buildStars(queue.length);
   showScreen("game");
   nextQuestion();
@@ -1866,6 +1915,8 @@ function nextQuestion(){
   if (mode === "sounds")    renderSounds(current);
   if (mode === "reading")   renderReading(current);
   if (mode === "maze")      renderMaze(current);
+  if (mode === "mazexl")    renderMaze(current);
+  if (mode === "walk")      renderWalk(current);
   setTimeout(askAloud, 350);
 }
 
@@ -2247,6 +2298,24 @@ const MAZE_PAIRS = [
   {a:"🐆",b:"🥩", an:"den Gepard",    bn:"zum Steak"},
   {a:"🐺",b:"🐷", an:"den Wolf",      bn:"zum Schweinchen"},
   {a:"🐊",b:"🐠", an:"das Krokodil",  bn:"zum Fisch"},
+  // Meer
+  {a:"🐢",b:"🥬", an:"die Schildkröte", bn:"zum Salat"},
+  {a:"🐙",b:"🦀", an:"den Tintenfisch", bn:"zur Krabbe"},
+  {a:"🐬",b:"🐠", an:"den Delfin",     bn:"zum Fisch"},
+  {a:"🦦",b:"🐚", an:"den Otter",      bn:"zur Muschel"},
+  // Bauernhof & Wald
+  {a:"🐔",b:"🌽", an:"das Huhn",       bn:"zum Mais"},
+  {a:"🐮",b:"🌾", an:"die Kuh",        bn:"zum Gras"},
+  {a:"🐷",b:"🍎", an:"das Schweinchen", bn:"zum Apfel"},
+  {a:"🐴",b:"🥕", an:"das Pferd",      bn:"zur Karotte"},
+  {a:"🦔",b:"🍓", an:"den Igel",       bn:"zur Erdbeere"},
+  {a:"🐿️",b:"🌰", an:"das Eichhörnchen", bn:"zur Nuss"},
+  {a:"🐦",b:"🪱", an:"den Vogel",      bn:"zum Wurm"},
+  {a:"🐝",b:"🌸", an:"die Biene",      bn:"zur Blüte"},
+  // Große Tiere
+  {a:"🐘",b:"🥜", an:"den Elefanten",  bn:"zur Erdnuss"},
+  {a:"🦒",b:"🍃", an:"die Giraffe",    bn:"zum Blatt"},
+  {a:"🐼",b:"🎋", an:"den Panda",      bn:"zum Bambus"},
 ];
 /* Eine Runde: 6 Tier-Paare, Gitter wächst 3,3,4,4,5,5 (erst Linie folgen, dann Abzweigungen). */
 function makeMazeRound(n){
@@ -2375,6 +2444,149 @@ function setupMaze(cv, N, pair){
   cv.addEventListener("pointermove", move);
   cv.addEventListener("pointerup", up);
   cv.addEventListener("pointercancel", up);
+}
+
+/* ---------- Großes Labyrinth (schwerer: größere Gitter, gleiche Finger-Steuerung) ---------- */
+/* Gitter wächst 4,5,6,6,7,8 – deutlich längere, verschlungenere Wege als beim normalen Labyrinth. */
+function makeMazeXLRound(n){
+  const sizes = [4,5,6,6,7,8];
+  return shuffle(MAZE_PAIRS).slice(0, n).map((p, i) => ({ pair: p, N: sizes[Math.min(i, sizes.length-1)] }));
+}
+
+/* ---------- Irrgarten (frei laufen mit Pfeilen/Wischen, mit Sackgassen + Futter sammeln) ---------- */
+const WALK_DIRS = { up:"N", down:"S", left:"W", right:"E" };
+const WALK_KEYS = { ArrowUp:"N", ArrowDown:"S", ArrowLeft:"W", ArrowRight:"E", w:"N", s:"S", a:"W", d:"E" };
+const WALK_PALETTES = [
+  { wall:"#1b9e6a", floor:"#e7f7ec", start:"#bff0d4" },   // Dschungel
+  { wall:"#0277bd", floor:"#e1f5fe", start:"#b3e5fc" },   // Meer
+  { wall:"#6a1b9a", floor:"#f3e5f5", start:"#e1bee7" },   // Weltraum
+  { wall:"#ef6c00", floor:"#fff3e0", start:"#ffe0b2" },   // Sonne
+  { wall:"#c62828", floor:"#ffebee", start:"#ffcdd2" },   // Beeren
+];
+function mazeTheme(pair){ let h = 0; for (const ch of pair.a) h += ch.codePointAt(0); return WALK_PALETTES[h % WALK_PALETTES.length]; }
+/* Eine Runde: Gitter wächst 4,4,5,5,6,6; ab Level 3 müssen mehrere Futter-Stücke eingesammelt werden (1,1,2,2,3,3). */
+function makeWalkRound(n){
+  const sizes = [4,4,5,5,6,6], foods = [1,1,2,2,3,3];
+  return shuffle(MAZE_PAIRS).slice(0, n).map((p, i) => ({
+    pair: p, N: sizes[Math.min(i, sizes.length-1)], food: foods[Math.min(i, foods.length-1)]
+  }));
+}
+/* BFS-Distanzen ab Start (0,0) – für möglichst weit entfernte, verteilte Futterplätze. */
+function mazeDistances(cells, N){
+  const dist = {}, q = [cells[0][0]]; dist["0,0"] = 0;
+  while (q.length){
+    const c = q.shift();
+    for (const d of ["N","E","S","W"]){
+      if (c.wall[d]) continue;
+      const n = cells[c.y+MAZE_DXY[d][1]][c.x+MAZE_DXY[d][0]], k = n.x+","+n.y;
+      if (dist[k] === undefined){ dist[k] = dist[c.x+","+c.y] + 1; q.push(n); }
+    }
+  }
+  return dist;
+}
+let walkState = null;
+function renderWalk(item){
+  const N = item.N, pair = item.pair;
+  const cells = genMaze(N), dist = mazeDistances(cells, N);
+  // Futterzellen: am weitesten vom Start weg + möglichst voneinander entfernt, nie auf dem Start.
+  const ranked = [];
+  for (let y=0;y<N;y++) for (let x=0;x<N;x++){ if (x===0 && y===0) continue; ranked.push({ x, y, d: dist[x+","+y] || 0 }); }
+  ranked.sort((a,b) => b.d - a.d);
+  const foods = [], minApart = Math.max(1, N-2);
+  for (const c of ranked){
+    if (foods.length >= item.food) break;
+    if (foods.every(f => Math.abs(f.x-c.x) + Math.abs(f.y-c.y) >= minApart)) foods.push({ x:c.x, y:c.y, eaten:false });
+  }
+  for (let i = 0; foods.length < item.food && i < ranked.length; i++){     // notfalls auffüllen
+    const c = ranked[i]; if (!foods.some(f => f.x===c.x && f.y===c.y)) foods.push({ x:c.x, y:c.y, eaten:false });
+  }
+  walkState = { cells, N, hx:0, hy:0, foods, pair, left:foods.length, done:false };
+  el.ask.innerHTML = item.food > 1 ? `Friss alle ${pair.b} auf!` : `Bring ${pair.a} ➡️ ${pair.b}`;
+  drawWalk();
+  setTimeout(() => speak(item.food > 1 ? "Friss alles auf!" : "Bring " + pair.an + " " + pair.bn + "!"), 250);
+}
+function drawWalk(){
+  const s = walkState, N = s.N, pad = 0.16, th = mazeTheme(s.pair);
+  let walls = "";
+  for (let y=0;y<N;y++) for (let x=0;x<N;x++){
+    const c = s.cells[y][x];
+    if (c.wall.N) walls += `M${x} ${y}h1`;
+    if (c.wall.W) walls += `M${x} ${y}v1`;
+  }
+  walls += `M${N} 0v${N}M0 ${N}h${N}`;
+  const foodSVG = s.foods.map((f,i) =>
+    `<g class="walkfood" id="wf${i}" style="transform:translate(${f.x+0.5}px,${f.y+0.5}px)"><text class="wglyph" text-anchor="middle" dominant-baseline="central">${s.pair.b}</text></g>`
+  ).join("");
+  const svg =
+    `<svg class="walksvg" viewBox="${-pad} ${-pad} ${N+2*pad} ${N+2*pad}" style="--wc:${th.wall};--fc:${th.floor};--sc:${th.start}">` +
+      `<rect class="wfloor" x="${-pad}" y="${-pad}" width="${N+2*pad}" height="${N+2*pad}"/>` +
+      `<rect class="wstart" x="0.06" y="0.06" width="0.88" height="0.88" rx="0.18"/>` +
+      `<g id="walkTrail"></g>` +
+      `<path class="wwall" d="${walls}"/>` +
+      foodSVG +
+      `<g id="walkHero" style="transform:translate(0.5px,0.5px)"><text class="wglyph whero" text-anchor="middle" dominant-baseline="central">${s.pair.a}</text></g>` +
+    `</svg>`;
+  const dpad =
+    `<div class="dpad">` +
+      `<button class="dbtn up"    data-dir="up"    aria-label="hoch">⬆️</button>` +
+      `<button class="dbtn left"  data-dir="left"  aria-label="links">⬅️</button>` +
+      `<button class="dbtn right" data-dir="right" aria-label="rechts">➡️</button>` +
+      `<button class="dbtn down"  data-dir="down"  aria-label="runter">⬇️</button>` +
+    `</div>`;
+  el.content.innerHTML = `<div class="walkwrap"><div class="walkboard">${svg}</div>${dpad}</div>`;
+  el.content.querySelectorAll(".dbtn").forEach(b => b.addEventListener("click", () => walkMove(WALK_DIRS[b.dataset.dir])));
+  // Wischen direkt auf dem Spielfeld
+  const board = el.content.querySelector(".walkboard");
+  let sx = 0, sy = 0, sw = false;
+  board.addEventListener("pointerdown", e => { sw = true; sx = e.clientX; sy = e.clientY; });
+  board.addEventListener("pointerup", e => {
+    if (!sw) return; sw = false;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.hypot(dx, dy) < 20) return;
+    if (Math.abs(dx) > Math.abs(dy)) walkMove(dx > 0 ? "E" : "W"); else walkMove(dy > 0 ? "S" : "N");
+  });
+}
+function walkMove(dir){
+  const s = walkState; if (!s || s.done) return;
+  const c = s.cells[s.hy][s.hx];
+  if (c.wall[dir]){ walkBump(); return; }
+  s.hx += MAZE_DXY[dir][0]; s.hy += MAZE_DXY[dir][1];
+  playBlip();
+  const hero = byId("walkHero"); if (hero) hero.style.transform = `translate(${s.hx+0.5}px,${s.hy+0.5}px)`;
+  walkTrail(s.hx, s.hy);
+  const fi = s.foods.findIndex(f => !f.eaten && f.x === s.hx && f.y === s.hy);
+  if (fi >= 0) walkEat(fi);
+}
+function walkBump(){
+  tone(180, 0, 0.08, "sine", 0.10);
+  const b = el.content.querySelector(".walkboard");
+  if (b){ b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); }
+}
+function walkTrail(x, y){
+  if (x === 0 && y === 0) return;
+  const g = byId("walkTrail"); if (!g || g.querySelector(`[data-c="${x}-${y}"]`)) return;
+  const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  r.setAttribute("class", "wtrail"); r.setAttribute("data-c", `${x}-${y}`);
+  r.setAttribute("x", x + 0.28); r.setAttribute("y", y + 0.28);
+  r.setAttribute("width", "0.44"); r.setAttribute("height", "0.44"); r.setAttribute("rx", "0.1");
+  g.appendChild(r);
+}
+function walkPop(x, y){
+  const svg = el.content.querySelector(".walksvg"); if (!svg) return;
+  ["😋","❤️"].forEach((e, k) => {
+    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    t.setAttribute("class", "wpop"); t.setAttribute("text-anchor", "middle");
+    t.setAttribute("x", x + 0.5 + (k ? 0.22 : -0.22)); t.setAttribute("y", y + 0.45);
+    t.textContent = e; svg.appendChild(t);
+    setTimeout(() => t.remove(), 760);
+  });
+}
+function walkEat(i){
+  const s = walkState; s.foods[i].eaten = true; s.left--;
+  const fg = byId("wf" + i); if (fg) fg.classList.add("eaten");
+  playBlip(); walkPop(s.foods[i].x, s.foods[i].y);
+  if (s.left <= 0){ s.done = true; setTimeout(() => glyphSuccess("Geschafft!"), 380); }
+  else speak(pick(["Lecker!","Mmh!","Noch mehr!","Weiter!"]));
 }
 
 /* ---------- Such-Held (English Wimmelbild – gezeichnete Szenen) ---------- */
@@ -3468,6 +3680,7 @@ const STAT_GAMES = [
   ["subtraction","➖ Minus"],["pattern","🧩 Muster"],["trace","✏️ Zahlen malen"],["paint","🎨 Anmalen"],
   ["wordtrace","✍️ Wörter"],["reading","📖 Lesen"],["flags","🏳️ Flaggen"],["capitals","🗺️ Hauptstädte"],
   ["english","🇬🇧 Englisch"],["shapes","🔶 Farben/Formen"],["sounds","🔊 Geräusche"],["memory","🃏 Memory"],
+  ["maze","🌀 Labyrinth"],["mazexl","🧭 Großes Labyrinth"],["walk","🕹️ Irrgarten"],["search","🔍 Suchen"],
 ];
 
 let alarmFired = false;
@@ -3609,6 +3822,8 @@ function winRound(){
               : mode === "sounds" ? "Geräusche-Held"
               : mode === "reading" ? "Lese-Held"
               : mode === "maze" ? "Labyrinth-Held"
+              : mode === "mazexl" ? "Labyrinth-Profi"
+              : mode === "walk" ? "Irrgarten-Held"
               : mode === "search" ? "Such-Held"
               : "Lern-Held";
   el.winText.innerHTML = `Super gemacht!<br>Du bist ein<br>${title}! 🌟`;
@@ -3684,6 +3899,9 @@ el.speakBtn.addEventListener("click", () => {
 el.homeBtn.addEventListener("click", () => { cancelRead(); speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
 el.againBtn.addEventListener("click", () => { initAudio(); primeSpeech(); startGame(mode); });
 el.menuBtn.addEventListener("click", () => { cancelRead(); speechSynthesis && speechSynthesis.cancel(); showScreen("menu"); });
+window.addEventListener("keydown", e => {   // Irrgarten: Pfeiltasten / WASD (praktisch am Desktop)
+  if (mode === "walk" && WALK_KEYS[e.key]){ e.preventDefault(); walkMove(WALK_KEYS[e.key]); }
+});
 el.zooBtn.addEventListener("click", () => { initAudio(); showZoo(); });
 if (el.zooBtn){
   el.zooBtn.insertAdjacentHTML("afterend", '<button class="pe-link" id="peLink">📊 Für Eltern</button>');

@@ -41,6 +41,12 @@ Ursprünglich gebaut für meinen 4-jährigen Sohn.
 - 🐮 **Tier-Geräusche** – Welches Tier macht „Muh"?
 - 🃏 **Memory** – Tier-Paare finden
 - 🎨 **Tiere anmalen** – Malen nach Zahlen mit Dschungel-Tieren
+- 🔍 **Such-Held** – „Find it in English!" – das gesuchte Bild im Wimmelbild antippen
+
+**Labyrinthe & Geschick**
+- 🌀 **Labyrinth-Held** – das Tier mit dem Finger durchs Labyrinth zum Futter führen
+- 🧭 **Großes Labyrinth** – gleiche Steuerung, aber deutlich größere, verschlungenere Gitter (4–8 Felder)
+- 🕹️ **Irrgarten** – das Tier frei mit Pfeil-Tasten oder Wischen steuern; echte Sackgassen, und in späteren Levels mehrere Futter-Stücke einsammeln
 
 **Belohnung**
 - 🦁 **Sammel-Album** – jede gewonnene Runde schenkt ein Tier, das nach und nach einen Zoo/Dschungel füllt (lokal gespeichert).
