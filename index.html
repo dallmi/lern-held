@@ -57,6 +57,10 @@
   }
   #menu .sub { font-size: 4.8cqw; margin: 8px 0 4px; opacity: .95; text-align: center;
                text-shadow: 0 2px 0 rgba(0,0,0,.18); }
+  .offline-badge { font-size: 3.2cqw; font-weight: 700; color: #0c5e3a; text-align: center;
+                   background: rgba(255,255,255,.75); border-radius: 999px; padding: 4px 12px;
+                   margin: 2px auto 0; box-shadow: 0 2px 0 rgba(0,0,0,.10); }
+  .offline-badge[hidden] { display: none; }
   .tiles { display: flex; flex-direction: column; gap: 14px; width: 100%; margin: 18px 0; }
   .tile {
     color: #fff; border: none; border-radius: 24px;
@@ -496,6 +500,7 @@
        Gleiche Zahlen wie portrait → gleiche optische Größe, nur breiter verteilt. */
     #menu h1 { font-size: 10.5cqh; }
     #menu .sub { font-size: 4.2cqh; margin: 4px 0 2px; }
+    .offline-badge { font-size: 2.8cqh; padding: 3px 12px; }
     .tile { padding: 2.3cqh 3cqw; gap: 2cqh; }
     .tile .ico { font-size: 10cqh; width: 17cqh; height: 17cqh; }
     .tile .t1 { font-size: 5cqh; }
@@ -547,6 +552,7 @@
   <section id="menu" class="screen active">
     <h1>🦁 <span class="title">Lern-Held</span> 🎉</h1>
     <p class="sub">Such dir ein Spiel aus!</p>
+    <div class="offline-badge" id="offlineBadge" hidden>✓ Offline-bereit – funktioniert ohne Internet</div>
     <div class="tiles">
       <button class="tile" data-mode="letters">
         <span class="ico">🔤</span>
@@ -3974,9 +3980,22 @@ window.addEventListener("load", () => setTimeout(pickVoice, 200));
 
 <!-- Offline-Fähigkeit: Service-Worker (greift nur über https/GitHub Pages, lokal harmlos ignoriert) -->
 <script>
+function showOfflineReady(){
+  const b = document.getElementById("offlineBadge");
+  if (b) b.hidden = false;
+}
 if ("serviceWorker" in navigator) {
+  // Meldung des Service-Workers: "alles gecacht -> offline-bereit"
+  navigator.serviceWorker.addEventListener("message", (ev) => {
+    if (ev.data && ev.data.type === "offline-ready") showOfflineReady();
+  });
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch(() => {});
+    // Bei späteren Besuchen ist alles längst gecacht -> aktiv nachfragen.
+    navigator.serviceWorker.ready.then((reg) => {
+      const sw = navigator.serviceWorker.controller || reg.active;
+      if (sw) sw.postMessage("are-you-ready");
+    }).catch(() => {});
   });
 }
 </script>
