@@ -35,6 +35,7 @@ Ursprünglich gebaut für meinen 4-jährigen Sohn.
 - 🏳️ **Flaggen-Held** – 42 Länderflaggen als SVG
 - 🗺️ **Hauptstadt-Held** – 34 Hauptstädte, jede mit einer handgezeichneten Sehenswürdigkeit (Eiffelturm, Big Ben, Basilius-Kathedrale, Hallgrímskirkja, Drache von Ljubljana …)
 - 🇬🇧 **Englisch-Held** – englisches Wort hören, Bild finden
+- 🇸🇪 **Schwedisch-Held** – schwedisches Wort hören, Bild finden
 - 🔶 **Farben & Formen** – auf Englisch („Find the red star!")
 
 **Spaß & Gedächtnis**

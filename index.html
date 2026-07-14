@@ -77,6 +77,7 @@
   .tile[data-mode="flags"]    { background: linear-gradient(135deg,#2fd36b 0%,#0fa89a 100%); }
   .tile[data-mode="capitals"] { background: linear-gradient(135deg,#19c2e6 0%,#2f72e8 100%); }
   .tile[data-mode="english"]  { background: linear-gradient(135deg,#ff6fae 0%,#9d4edd 100%); }
+  .tile[data-mode="swedish"]  { background: linear-gradient(135deg,#006aa7 0%,#4aa3e0 100%); }
   .tile[data-mode="shapes"]   { background: linear-gradient(135deg,#ff5252 0%,#ffb300 50%,#26c281 100%); }
   .tile[data-mode="addition"] { background: linear-gradient(135deg,#36d1dc 0%,#2b86c5 100%); }
   .tile[data-mode="pattern"]  { background: linear-gradient(135deg,#f7971e 0%,#ffd200 100%); }
@@ -101,6 +102,7 @@
   .tile[data-mode="flags"] .ico    { animation-delay: .8s; }
   .tile[data-mode="capitals"] .ico { animation-delay: 1.2s; }
   .tile[data-mode="english"] .ico  { animation-delay: 1.6s; }
+  .tile[data-mode="swedish"] .ico  { animation-delay: 1.7s; }
   .tile[data-mode="shapes"] .ico   { animation-delay: 1.8s; }
   .tile[data-mode="addition"] .ico { animation-delay: 2.2s; }
   .tile[data-mode="pattern"] .ico  { animation-delay: 2.4s; }
@@ -590,6 +592,10 @@
         <span class="ico">🇬🇧</span>
         <span class="txt"><span class="t1">Englisch-Held</span><br><span class="t2">Hör das Wort – finde das Bild!</span></span>
       </button>
+      <button class="tile" data-mode="swedish">
+        <span class="ico">🇸🇪</span>
+        <span class="txt"><span class="t1">Schwedisch-Held</span><br><span class="t2">Hör das Wort – finde das Bild!</span></span>
+      </button>
       <button class="tile" data-mode="shapes">
         <span class="ico">🔶</span>
         <span class="txt"><span class="t1">Farben &amp; Formen</span><br><span class="t2">Auf Englisch: Find the red star!</span></span>
@@ -818,6 +824,36 @@ const ENGLISH = [
   { e: "🌸", en: "Flower",   de: "Blume" },
   { e: "👟", en: "Shoe",     de: "Schuh" },
   { e: "🎩", en: "Hat",      de: "Hut" },
+];
+const SWEDISH = [
+  { e: "🐶", sv: "Hund",   de: "Hund" },
+  { e: "🐱", sv: "Katt",   de: "Katze" },
+  { e: "🐟", sv: "Fisk",   de: "Fisch" },
+  { e: "🐦", sv: "Fågel",  de: "Vogel" },
+  { e: "🐮", sv: "Ko",     de: "Kuh" },
+  { e: "🐷", sv: "Gris",   de: "Schwein" },
+  { e: "🐴", sv: "Häst",   de: "Pferd" },
+  { e: "🦆", sv: "Anka",   de: "Ente" },
+  { e: "🐻", sv: "Björn",  de: "Bär" },
+  { e: "🦁", sv: "Lejon",  de: "Löwe" },
+  { e: "🐘", sv: "Elefant", de: "Elefant" },
+  { e: "🐵", sv: "Apa",    de: "Affe" },
+  { e: "🍎", sv: "Äpple",  de: "Apfel" },
+  { e: "🍌", sv: "Banan",  de: "Banane" },
+  { e: "🍰", sv: "Tårta",  de: "Kuchen" },
+  { e: "🥚", sv: "Ägg",    de: "Ei" },
+  { e: "🥛", sv: "Mjölk",  de: "Milch" },
+  { e: "⚽", sv: "Boll",   de: "Ball" },
+  { e: "🚗", sv: "Bil",    de: "Auto" },
+  { e: "🏠", sv: "Hus",    de: "Haus" },
+  { e: "📖", sv: "Bok",    de: "Buch" },
+  { e: "☀️", sv: "Sol",    de: "Sonne" },
+  { e: "⭐", sv: "Stjärna", de: "Stern" },
+  { e: "🌙", sv: "Måne",   de: "Mond" },
+  { e: "🌳", sv: "Träd",   de: "Baum" },
+  { e: "🌸", sv: "Blomma", de: "Blume" },
+  { e: "👟", sv: "Sko",    de: "Schuh" },
+  { e: "🎩", sv: "Hatt",   de: "Hut" },
 ];
 
 /* ---------- Hauptstädte für den Hauptstadt-Held (Flagge -> Sehenswürdigkeit) ---------- */
@@ -1687,7 +1723,7 @@ function playBlip(){ tone(880, 0, 0.10, "triangle", 0.20); } // beim Tier-Antipp
 /* ===================================================================
    SPRACHE (Web Speech API — Stimme des Geräts, offline)
    =================================================================== */
-let germanVoice = null, englishVoice = null;
+let germanVoice = null, englishVoice = null, swedishVoice = null;
 /* Beste Stimme wählen: "Compact"-Varianten meiden, bekannte gute Stimmen bevorzugen */
 function chooseVoice(list, preferred){
   if (!list.length) return null;
@@ -1706,6 +1742,8 @@ function pickVoice(){
   const enUSGB = voices.filter(v => /^en[-_](us|gb)/i.test(v.lang));
   const enAny = voices.filter(v => /^en/i.test(v.lang));
   englishVoice = chooseVoice(enUSGB.length ? enUSGB : enAny, ["Samantha","Daniel","Karen","Moira","Google"]);
+  const svSE = voices.filter(v => /^sv/i.test(v.lang));
+  swedishVoice = chooseVoice(svSE, ["Alva","Klara","Oskar","Google"]);
 }
 if ("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 
@@ -1737,6 +1775,7 @@ function doSpeak(text, lang, voice, rate, pitch, onDone){
 }
 function speak(text, onDone){ doSpeak(fixPron(text), "de-DE", germanVoice, 0.94, 1.1, onDone); }
 function speakEN(text, onDone){ doSpeak(text, "en-US", englishVoice, 0.85, 1.05, onDone); }
+function speakSV(text, onDone){ doSpeak(text, "sv-SE", swedishVoice, 0.85, 1.05, onDone); }
 /* iOS: die erste Sprachausgabe muss direkt aus einer Berührung kommen, sonst bleibt sie stumm.
    Beim ersten Tippen einmal eine leise leere Ansage abspielen -> entsperrt alle weiteren. */
 let speechPrimed = false;
@@ -1872,6 +1911,7 @@ function startGame(m){
   if (m === "counting") queue = shuffle(ANIMAL_COUNT).slice(0, ROUND_LENGTH);
   if (m === "flags")    queue = shuffle(COUNTRIES).slice(0, ROUND_LENGTH);
   if (m === "english")  queue = shuffle(ENGLISH).slice(0, ROUND_LENGTH);
+  if (m === "swedish")  queue = shuffle(SWEDISH).slice(0, ROUND_LENGTH);
   if (m === "capitals") queue = shuffle(CAPITALS).slice(0, ROUND_LENGTH);
   if (m === "addition") queue = makeAdditionRound(ROUND_LENGTH);
   if (m === "subtraction") queue = makeSubtractionRound(ROUND_LENGTH);
@@ -1910,6 +1950,7 @@ function nextQuestion(){
   if (mode === "counting") renderCounting(current);
   if (mode === "flags")    renderFlags(current);
   if (mode === "english")  renderEnglish(current);
+  if (mode === "swedish")  renderSwedish(current);
   if (mode === "capitals") renderCapitals(current);
   if (mode === "rhyme")    renderRhyme(current);
   if (mode === "trace")    renderTrace(current);
@@ -1931,6 +1972,7 @@ function askAloud(){
   if (mode === "counting") speak("Wie viele " + current.plural + "?");
   if (mode === "flags")    speak("Finde " + current.name);
   if (mode === "english")  speakEN("Where is the " + current.en.toLowerCase() + "?");
+  if (mode === "swedish")  speakSV("Var är " + current.sv.toLowerCase() + "?");
   if (mode === "capitals") readCapitals();
   if (mode === "rhyme")    speak("Was reimt sich auf " + current.word + "?");
   if (mode === "memory")   speak("Finde die Tier-Paare!");
@@ -2058,6 +2100,26 @@ function renderEnglish(item){
     b.addEventListener("click", () => {
       handleAnswer(o.en === item.en, b,
         (done) => speakEN(pick(["Yes! " + item.en + "!", "Great job!", "Well done! " + item.en + "!", "Correct! " + item.en + "!"]), done));
+    });
+    choices.appendChild(b);
+  });
+  el.content.appendChild(choices);
+}
+
+/* ---------- Schwedisch-Held (wie Englisch-Held, nur auf Schwedisch) ---------- */
+function renderSwedish(item){
+  el.ask.innerHTML = `Var är <b>${item.sv}</b>?<span class="hint">(${item.de})</span>`;
+  const distractors = shuffle(SWEDISH.filter(x => x.sv !== item.sv)).slice(0, 2);
+  const options = shuffle([item, ...distractors]);
+
+  const choices = document.createElement("div");
+  choices.className = "choices";
+  options.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "choice big emoji"; b.textContent = o.e;
+    b.addEventListener("click", () => {
+      handleAnswer(o.sv === item.sv, b,
+        (done) => speakSV(pick(["Ja! " + item.sv + "!", "Bra jobbat!", "Rätt! " + item.sv + "!", "Duktig!"]), done));
     });
     choices.appendChild(b);
   });
@@ -3680,6 +3742,7 @@ function missLabel(){
       case "flags":       return current && current.name;
       case "capitals":    return current && current.country;
       case "english":     return current && current.en;
+      case "swedish":     return current && current.sv;
       case "rhyme":       return current && current.word;
       case "sounds":      return current && current.name;
       case "shapes":      return current && (current.type === "color" ? (current.target && current.target.name) : current.target);
@@ -3725,7 +3788,7 @@ const STAT_GAMES = [
   ["letters","🔤 Buchstaben"],["rhyme","🎵 Reime"],["counting","🔢 Zählen"],["addition","➕ Plus"],
   ["subtraction","➖ Minus"],["pattern","🧩 Muster"],["trace","✏️ Zahlen malen"],["paint","🎨 Anmalen"],
   ["wordtrace","✍️ Wörter"],["reading","📖 Lesen"],["flags","🏳️ Flaggen"],["capitals","🗺️ Hauptstädte"],
-  ["english","🇬🇧 Englisch"],["shapes","🔶 Farben/Formen"],["sounds","🔊 Geräusche"],["memory","🃏 Memory"],
+  ["english","🇬🇧 Englisch"],["swedish","🇸🇪 Schwedisch"],["shapes","🔶 Farben/Formen"],["sounds","🔊 Geräusche"],["memory","🃏 Memory"],
   ["maze","🌀 Labyrinth"],["mazexl","🧭 Großes Labyrinth"],["walk","🕹️ Irrgarten"],["search","🔍 Suchen"],
 ];
 
@@ -3846,6 +3909,7 @@ function handleAnswer(isCorrect, btn, praiseFn){
     btn.classList.remove("wrong"); void btn.offsetWidth; btn.classList.add("wrong");
     playWrong();
     if (mode === "english") speakEN(pick(["Try again!", "Almost! Try again.", "Oops! Try another one."]));
+    else if (mode === "swedish") speakSV(pick(["Försök igen!", "Nästan!", "Oj! Prova en annan."]));
     else                    speak(pick(["Versuch es nochmal!", "Probier noch eine!", "Fast! Schau nochmal."]));
   }
 }
@@ -3856,6 +3920,7 @@ function winRound(){
               : mode === "flags" ? "Flaggen-Held"
               : mode === "capitals" ? "Hauptstadt-Held"
               : mode === "english" ? "Englisch-Held"
+              : mode === "swedish" ? "Schwedisch-Held"
               : mode === "rhyme" ? "Reim-Held"
               : mode === "memory" ? "Memory-Held"
               : mode === "trace" ? "Mal-Held"
@@ -3885,6 +3950,7 @@ function winRound(){
   playCheer();
   setTimeout(() => { confettiBurst(); confettiBurst(); }, 150);
   if (mode === "english")     setTimeout(() => speakEN("Well done! You are an English hero!"), 400);
+  else if (mode === "swedish") setTimeout(() => speakSV("Bra jobbat! Du är en svensk hjälte!"), 400);
   else if (mode === "shapes" || mode === "search") setTimeout(() => speakEN("Well done! Great job!"), 400);
   else                        setTimeout(() => speak("Super gemacht! Du bist ein " + title + "!"), 400);
 }
